@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>大學生的一天</title>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#120a2a;color:#fff;font-family:'DotGothic16','Press Start 2P','Noto Sans TC',monospace;display:flex;justify-content:center}
+#w{width:min(100vw,960px);padding:6px}
+#hud{display:flex;justify-content:space-between;gap:6px;background:#241552;border:4px solid #ff4fd8;padding:6px;font-size:clamp(12px,2.3vw,18px);line-height:1.6}
+.st{display:inline-flex;align-items:center;gap:3px;margin-right:8px}
+.st u{display:inline-block;width:clamp(40px,8vw,80px);height:10px;background:#000;border:2px solid #fff}
+.st s{display:block;height:100%}
+button{font:inherit;background:#ffeb3b;color:#000;border:3px solid #fff;padding:6px 10px;cursor:pointer;margin:2px}
+#stg{position:relative;margin-top:6px;border:4px solid #00e5ff;aspect-ratio:3/2;background:#000;overflow:hidden}
+canvas{width:100%;height:100%;image-rendering:pixelated;display:block;transition:opacity .15s}
+#ts{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:#000c;border:2px solid #ffeb3b;padding:4px 10px;opacity:0;transition:.3s;pointer-events:none;font-size:clamp(12px,2.4vw,20px);text-align:center;max-width:90%}
+#dlg{position:absolute;left:2%;right:2%;bottom:3%;display:none;background:#12063a;border:4px solid #fff;box-shadow:0 0 0 4px #ff4fd8;padding:10px 14px;font-size:clamp(14px,2.8vw,24px);line-height:1.5;z-index:4}
+#dlg b{color:#ffeb3b}#dlg p{margin:4px 0}#dlg i{float:right;animation:bl 1s steps(2) infinite}
+#dlg button{display:block;width:100%;text-align:left;background:#12063a;color:#fff;border:2px solid #00e5ff;margin:4px 0}
+#dlg button:hover{background:#00e5ff;color:#000}
+@keyframes bl{50%{opacity:0}}
+#ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#000a;z-index:5}
+.box{background:#12063a;border:4px solid #ffeb3b;padding:12px;width:min(92%,640px);text-align:center;font-size:clamp(13px,2.5vw,20px);max-height:96%;overflow:auto;line-height:1.5}
+h2,h3{margin:6px 0;color:#ff4fd8}
+.bar{position:relative;height:28px;background:#000;border:3px solid #fff;margin:10px 0}
+#mb{height:100%;background:#ff4fd8;width:0}
+.zone{position:absolute;top:0;height:100%;background:#4caf50}
+#mk{position:absolute;top:-4px;width:8px;height:32px;background:#ffeb3b;border:2px solid #000}
+#fd{position:relative;height:min(40vw,250px);background:#1b0f3f;border:3px solid #fff;overflow:hidden}
+.tg{position:absolute;width:36px;height:36px;border-radius:50%;background:radial-gradient(#fff 15%,#f44 17%,#f44 45%,#fff 47%,#f44 70%);cursor:crosshair}
+.tile{width:56px;height:72px;background:#fffde7;color:#b71c1c;border:3px solid #5d4037;font-size:20px;line-height:1.2}
+table{margin:8px auto;border-collapse:collapse}td,th{border:2px solid #fff;padding:3px 8px}
+#pd{display:none;position:absolute;left:6px;bottom:6px;grid-template:repeat(3,40px)/repeat(3,40px);z-index:3;opacity:.7}
+#pd button{padding:0;margin:0}
+#ab{display:none;position:absolute;right:10px;bottom:10px;width:64px;height:64px;border-radius:50%;z-index:3;opacity:.7;font-size:22px}
+@media(pointer:coarse){#pd{display:grid}#ab{display:block}}
+</style></head><body>
+<div id="w">
+<div id="hud"><div id="hs"></div><div id="hb"><button id="bt">📅課表(T)</button><button id="bp">📱手機</button><button id="br">🔄重開(R)</button></div></div>
+<div id="stg"><canvas id="cv"></canvas><div id="ts"></div><div id="dlg"></div><div id="pd"></div><button id="ab">E</button>
+<div id="ov"><div class="box"><h2>大學生的一天</h2>
+<p>課表每次隨機。現實 3 秒 ＝ 遊戲 1 分鐘。<br>方向鍵 / WASD 移動 · Shift 奔跑（耗體力）· E 或空白鍵 互動 · T 課表 · R 重新開局<br>學業、精力、社交、SAN 值、飽食、水分、金錢都要顧——某些數值爆表或歸零，今天就會提早結束。<br>課還是要上。夜裡教室會鎖門，健身房、圖書館、宵夜店要騎車去。</p>
+<button id="sb">開始這一天</button></div></div></div>
+</div>
+<script>
+const $=s=>document.querySelector(s),R=Math.random,pk=a=>a[R()*a.length|0],cl=(v,a,b)=>Math.max(a,Math.min(b,v)),pad=n=>String(n|0).padStart(2,'0');
+const cv=$('#cv'),g=cv.getContext('2d'),dlg=$('#dlg'),ov=$('#ov'),ts=$('#ts');
+cv.width=1440;cv.height=960;
+let S,busy=0,cb=null,kd=null,keys={},T={},AC,ev=[],tt_;
+/* ---------- 音效（Web Audio 即時生成） ---------- */
+function sfx(f,d=.08,ty='square',v=.04){try{AC=AC||new AudioContext();const o=AC.createOscillator(),a=AC.createGain();o.type=ty;o.frequency.value=f;a.gain.setValueAtTime(v,AC.currentTime);a.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(a);a.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const jg=a=>a.forEach((f,i)=>setTimeout(()=>sfx(f,.12),i*110));
+/* ---------- 狀態 ---------- */
+const init=()=>({t:0,map:'dorm',x:14*16,y:15*16,fr:0,a:50,e:90,c:45,s:70,m:600,f:60,w:60,nap:0,miss:0,mj:0,ph:0,gm:0,ur:0,urN:0,inv:0,inC:0,over:0,go:0,tt:[],q:0,qd:{},qn:0,crash:0,lib:0,gym:0,snk:0,ai:0,wz:0,fz:0});
+const ch=(k,v)=>{k=='m'?S.m=Math.max(0,(S.m+v)|0):S[k]=cl(S[k]+v,0,100)};
+const clk=()=>pad(S.t/60%24)+':'+pad(S.t%60);
+const cur=()=>S.tt.find(c=>S.t>=c.s&&S.t<c.e);
+const hh=()=>S.t/60%24,night=()=>hh()>=18.5||hh()<6;
+const opn=r=>{const h=hh();return r[1]>24?(h>=r[0]||h<r[1]-24):(h>=r[0]&&h<r[1])};
+function toast(t){ts.textContent=t;ts.style.opacity=1;clearTimeout(tt_);tt_=setTimeout(()=>ts.style.opacity=0,3600)}
+/* ---------- 對話 / 選擇 ---------- */
+function dl(n,t,o){busy++;return new Promise(r=>{cb={r,ch:!!o};dlg.innerHTML=`<b>${n||''}</b><p>${t}</p>`+(o?o.map((x,i)=>`<button data-i="${i}">${i+1}. ${x}</button>`).join(''):'<i>▼</i>');dlg.style.display='block'})}
+const say=(n,t)=>dl(n,t),ask=(t,o,n)=>dl(n,t,o);
+dlg.onclick=e=>{if(!cb)return;const c=cb,i=e.target.dataset.i;if(c.ch&&i==null)return;cb=null;dlg.style.display='none';busy--;sfx(660,.05);c.r(c.ch?+i:0)};
+/* ---------- 小遊戲 ---------- */
+function mash(h,sec,goal,lb){busy++;return new Promise(r=>{let n=0;const st=Date.now();ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div class=bar><div id=mb></div></div><button id=mbt style="font-size:1.4em;width:80%">${lb}</button><p id=mt></p><p>（連打按鈕或空白鍵）</p></div>`;
+const tap=()=>{n++;sfx(300+n*10,.03);$('#mb').style.width=Math.min(100,n/goal*100)+'%'};$('#mbt').onpointerdown=tap;kd=e=>{if(e.key==' ')tap()};
+const iv=setInterval(()=>{const l=sec*1000-(Date.now()-st);$('#mt').textContent=Math.max(0,l/1000).toFixed(1)+' 秒';if(n>=goal||l<=0){clearInterval(iv);kd=null;ov.style.display='none';busy--;const ok=n>=goal;if(ok)jg([660,880]);r(ok)}},40)})}
+function timing(h){busy++;return new Promise(r=>{const w=.2,z=.15+R()*.55,sp=.014+R()*.01;let p=0,d=1,iv;ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div class=bar><div class=zone style="left:${z*100}%;width:${w*100}%"></div><div id=mk></div></div><button id=go>現在！</button><p>（按鈕或空白鍵，停在綠區）</p></div>`;
+const stop=()=>{clearInterval(iv);kd=null;ov.style.display='none';busy--;const ok=p>=z&&p<=z+w;sfx(ok?880:150,.15);r(ok)};
+$('#go').onpointerdown=stop;kd=e=>{if(e.key==' ')stop()};
+iv=setInterval(()=>{p+=d*sp;if(p>=1||p<=0)d=-d;p=cl(p,0,1);$('#mk').style.left=p*100+'%'},16)})}
+function aim(h,n){busy++;return new Promise(r=>{let hit=0,i=0,tm;ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div id=fd></div><p id=ai></p></div>`;const fd=$('#fd');
+const nx=()=>{clearTimeout(tm);fd.innerHTML='';if(i++>=n){ov.style.display='none';busy--;return r(hit)}$('#ai').textContent=`命中 ${hit} / ${n}`;const b=document.createElement('b');b.className='tg';b.style.left=R()*88+'%';b.style.top=R()*80+'%';b.onpointerdown=()=>{hit++;sfx(900,.04);nx()};fd.append(b);tm=setTimeout(nx,1000)};nx()})}
+function mjg(b){busy++;return new Promise(r=>{const sv=['萬','筒','條'],mk=()=>({v:1+R()*9|0,s:pk(sv)});let me=[...Array(5)].map(mk),op=[...Array(5)].map(mk),w=0,l=0,n=0,msg='牌局開始！每輪挑一張牌，和對手比大小。';
+const draw=()=>{ov.style.display='flex';ov.innerHTML=`<div class=box><h2>🀄 麻將 $${b}</h2><p>你 ${w} : ${l} 對手</p><p>${msg}</p><div>${me.map((t,i)=>t?`<button class=tile data-i=${i}>${t.v}<br>${t.s}</button>`:'').join('')}</div></div>`;
+ov.querySelectorAll('.tile').forEach(bt=>bt.onclick=()=>{const m=me[+bt.dataset.i];me[+bt.dataset.i]=0;const j=pk([...op.keys()].filter(k=>op[k])),o=op[j];op[j]=0;n++;sfx(500,.05);msg=`你 ${m.v}${m.s} vs 對手 ${o.v}${o.s}：`+(m.v>o.v?(w++,'你贏這輪'):m.v<o.v?(l++,'你輸這輪'):'平手');n==5?fin():draw()})};
+const fin=()=>{const net=w==5?b*3:w>l?b:w<l?-b:0;ov.innerHTML=`<div class=box><h2>🀄 牌局結束 ${w}:${l}</h2><p>${msg}</p><p>${net>0?'你贏了 $'+net:net<0?'你輸了 $'+-net:'平手，沒輸沒贏'}</p><button id=ok>起身離桌</button></div>`;$('#ok').onclick=()=>{ov.style.display='none';busy--;r(net)}};draw()})}
+const QZ=[['∫ 2x dx = ?',['x²+C','2','x+C'],0],['F = ?',['ma','mc²','mv'],0],['Python 中 len([1,2,3]) 的結果是？',['2','3','4'],1],['The past tense of "go" is?',['goed','went','gone'],1],['教授剛剛講的重點是？',['第三章','第五章','他剛剛沒講'],2],['布林代數 1 OR 1 = ?',['2','1','0'],1],['下列何者最不可能是考試範圍？',['課本','上課內容','教授的午餐'],2]];
+async function quiz(att){let ok=0;for(const x of [...QZ].sort(()=>R()-.5).slice(0,3)){let rm=att>0?1:0;const o=x[1].map((t,i)=>[t,i]).filter(v=>v[1]==x[2]||!(rm-->0));const k=await ask('📝 '+x[0],o.map(v=>v[0]),'小考');if(o[k][1]==x[2])ok++}return ok}
+function react(h,lim){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div id=rb style="height:90px;background:#b71c1c;margin:10px 0;line-height:90px;font-size:1.4em">等……</div><button id=rg>按！</button></div>`;let t0=0,done=0;const fin=ok=>{if(done)return;done=1;clearTimeout(tm);kd=null;ov.style.display='none';busy--;sfx(ok?880:150,.15);r(ok)};
+const tm=setTimeout(()=>{t0=Date.now();$('#rb').style.background='#2e7d32';$('#rb').textContent='現在！'},1200+R()*2000);const hitf=()=>fin(t0>0&&Date.now()-t0<lim);$('#rg').onpointerdown=hitf;kd=e=>{if(e.key==' ')hitf()}})}
+function bike(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>🚲 騎車！（← → 閃避，或點左右半邊）</h2><canvas id=bc width=240 height=300 style="width:min(60%,240px);image-rendering:pixelated"></canvas></div>';const cv2=$('#bc'),c=cv2.getContext('2d');let ln=1,ob=[],cr=0,fr=0;const mvL=d=>{ln=cl(ln+d,0,2)};
+kd=e=>{if(e.key=='ArrowLeft'||e.key=='a')mvL(-1);if(e.key=='ArrowRight'||e.key=='d')mvL(1)};cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect();mvL(e.clientX<b.left+b.width/2?-1:1)};
+const iv=setInterval(()=>{fr++;if(fr%18==0)ob.push({l:R()*3|0,y:-30});ob.forEach(o=>o.y+=5);ob=ob.filter(o=>{if(o.y>232&&o.y<268&&o.l==ln){cr++;sfx(120,.2,'sawtooth');return false}return o.y<300});
+c.fillStyle='#455a64';c.fillRect(0,0,240,300);c.fillStyle='#fff59d';for(let i=1;i<3;i++)for(let y=(fr*5)%40-40;y<300;y+=40)c.fillRect(i*80-2,y,4,20);ob.forEach(o=>{c.fillStyle='#e53935';c.fillRect(o.l*80+22,o.y,36,28);c.fillStyle='#fff';c.fillRect(o.l*80+26,o.y+4,28,4)});c.fillStyle='#ffeb3b';c.fillRect(ln*80+30,240,20,28);c.fillStyle='#000';c.fillRect(ln*80+26,264,28,6);
+if(fr>=300){clearInterval(iv);kd=null;ov.style.display='none';busy--;r(cr)}},33)})}
+function brawl(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>荒野亂鬥 Lite（盜版）</h2><p>點擊畫面往該方向開槍，方向鍵移動。30 秒，擊倒越多越好</p><canvas id=bc width=320 height=200 style="width:100%;max-width:560px;image-rendering:pixelated;cursor:crosshair"></canvas></div>';const cv2=$('#bc'),c=cv2.getContext('2d');c.font='12px sans-serif';let P={x:160,y:100},en=[],bl=[],k=0,hp=3,fr=0;
+cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect(),tx=(e.clientX-b.left)/b.width*320,ty=(e.clientY-b.top)/b.height*200,d=Math.hypot(tx-P.x,ty-P.y)||1;bl.push({x:P.x,y:P.y,vx:(tx-P.x)/d*6,vy:(ty-P.y)/d*6});sfx(700,.04)};
+kd=e=>{const s=5;if(e.key=='ArrowLeft'||e.key=='a')P.x-=s;if(e.key=='ArrowRight'||e.key=='d')P.x+=s;if(e.key=='ArrowUp'||e.key=='w')P.y-=s;if(e.key=='ArrowDown'||e.key=='s')P.y+=s;P.x=cl(P.x,8,312);P.y=cl(P.y,8,192)};
+const iv=setInterval(()=>{fr++;if(fr%25==0)en.push({x:R()<.5?0:320,y:R()*200,h:2});
+en.forEach(o=>{const d=Math.hypot(P.x-o.x,P.y-o.y)||1;o.x+=(P.x-o.x)/d*1.1;o.y+=(P.y-o.y)/d*1.1;if(d<10){o.h=0;hp--;sfx(120,.2,'sawtooth')}});
+bl.forEach(b=>{b.x+=b.vx;b.y+=b.vy;en.forEach(o=>{if(o.h>0&&Math.hypot(b.x-o.x,b.y-o.y)<10){o.h--;b.x=-99;if(!o.h){k++;sfx(900,.06)}}})});bl=bl.filter(b=>b.x>0&&b.x<320&&b.y>0&&b.y<200);en=en.filter(o=>o.h>0);
+c.fillStyle='#6d4c41';c.fillRect(0,0,320,200);c.fillStyle='#5d4037';for(let i=0;i<320;i+=32)c.fillRect(i,(i*7)%200,10,6);c.fillStyle='#ffeb3b';c.fillRect(P.x-6,P.y-6,12,12);c.fillStyle='#e53935';en.forEach(o=>c.fillRect(o.x-6,o.y-6,12,12));c.fillStyle='#fff';bl.forEach(b=>c.fillRect(b.x-2,b.y-2,4,4));c.fillText('♥'.repeat(hp)+'  擊倒 '+k+'  '+Math.ceil(30-fr/30)+'s',6,14);
+if(hp<=0||fr>=900){clearInterval(iv);kd=null;ov.style.display='none';busy--;r(k)}},33)})}
+function aiVid(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><canvas id=vc width=270 height=360 style="width:min(60%,270px);image-rendering:pixelated"></canvas><p>▶ 12.3 萬次觀看　（點一下滑走）</p></div>';const c=$('#vc').getContext('2d'),cap=['【AI 生成】鯊魚穿上球鞋，走進便利商店','它買了一杯珍奶，但它沒有嘴巴','突然，高鐵便當開始唱歌','（劇情沒有連貫，但你停不下來）','最後，所有東西融化成一隻貓'];let fr=0,en=0;const fin=()=>{if(en)return;en=1;clearInterval(iv);ov.style.display='none';busy--;r()};$('#vc').onpointerdown=fin;
+const iv=setInterval(()=>{fr++;const t=fr/30;c.fillStyle=`hsl(${fr*4%360},60%,35%)`;c.fillRect(0,0,270,360);for(let i=0;i<6;i++){c.fillStyle=`hsl(${(fr*7+i*50)%360},80%,60%)`;const x=135+Math.sin(t*2+i)*90,y=150+Math.cos(t*3+i*2)*70,s=30+Math.sin(t*5+i)*14;c.fillRect(x-s/2,y-s/2,s,s*1.4)}
+c.fillStyle='#90a4ae';c.fillRect(95,170+Math.sin(t*8)*6,80,40);c.fillRect(165,185,34,14);c.fillStyle='#fff';c.fillRect(110,180,6,6);c.fillStyle='#e53935';c.fillRect(105,215,22,10);c.fillRect(140,215,22,10);
+c.font='14px DotGothic16,sans-serif';c.textAlign='center';c.fillStyle='#000';c.fillRect(0,290,270,50);c.fillStyle='#fff';c.fillText(cap[Math.min(4,t/2|0)],135,320,255);if(fr>=300)fin()},33)})}
+const FR=(c,o,x,y,w,h)=>{c.fillStyle=o;c.fillRect(x,y,w,h)};
+const FP={
+class:c=>{FR(c,'#d7ccc8',0,0,480,270);FR(c,'#2e7d32',70,24,340,112);[[90,50,150],[90,72,210],[90,94,110]].forEach(l=>FR(c,'#fff',l[0],l[1],l[2],3));FR(c,'#6d4c41',200,118,80,14);FR(c,'#5d4037',224,84,32,36);FR(c,'#ffcc99',228,62,24,22);FR(c,'#8d6e63',0,170,480,100);FR(c,'#a1887f',0,165,480,10);FR(c,'#ffcc99',170,226,40,44);FR(c,'#ffcc99',270,236,34,34);FR(c,'#fffde7',200,205,90,65);FR(c,'#90a4ae',211,214,60,3);FR(c,'#90a4ae',211,226,48,3)},
+pc:c=>{FR(c,'#0d0d1a',0,0,480,270);FR(c,'#1a237e',90,20,300,170);FR(c,'#4fc3f7',100,30,280,150);FR(c,'#fff',110,40,120,10);FR(c,'#ffeb3b',110,60,200,8);FR(c,'#ec407a',110,78,160,8);FR(c,'#37474f',200,190,80,20);FR(c,'#455a64',100,220,280,50);FR(c,'#ffcc99',150,235,50,35);FR(c,'#ffcc99',290,235,50,35)},
+mj:c=>{FR(c,'#1b5e20',0,0,480,270);for(let i=0;i<13;i++){FR(c,'#e0e0e0',100+i*22,10,18,26);FR(c,'#e0e0e0',8,40+i*5,18,10)}for(let i=0;i<8;i++)FR(c,'#a5d6a7',130+i*26,100,22,30);for(let i=0;i<13;i++){FR(c,'#fffde7',40+i*30,200,26,60);FR(c,'#b71c1c',46+i*30,214,14,14)}},
+bed:c=>{FR(c,'#1a1a2e',0,0,480,270);FR(c,'#ffd54f',220,20,40,16);FR(c,'#000',0,0,480,100);FR(c,'#000',0,170,480,100);FR(c,'#3949ab',0,100,480,70)},
+eat:c=>{FR(c,'#8d6e63',0,0,480,270);FR(c,'#d7ccc8',60,90,360,150);FR(c,'#fff',140,110,200,110);FR(c,'#ff8f00',160,130,60,40);FR(c,'#795548',230,130,80,50);FR(c,'#e0e0e0',150,70,3,30);FR(c,'#e0e0e0',250,60,3,40);FR(c,'#e0e0e0',330,70,3,30)}};
+function fp(k,t){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><canvas id=fc width=480 height=270 style="width:100%;image-rendering:pixelated"></canvas><p>${t}</p><button id=fk>繼續</button></div>`;FP[k]($('#fc').getContext('2d'));const go=()=>{kd=null;ov.style.display='none';busy--;r()};$('#fk').onclick=go;kd=e=>{if(e.key==' '||e.key=='Enter'||e.key=='e')go()}})}
+/* ---------- 課表 ---------- */
+const PD=[[480,530],[540,590],[600,650],[660,710],[780,830],[840,890],[900,950],[960,1010]],PL='一二三四五六七八',tm=m=>pad(m/60)+':'+pad(m%60);
+function mkTT(){const N=['微積分','普通物理','程式設計','大一英文','體育','通識：火鍋與哲學','線性代數','經濟學原理','電路學','統計學','國文','心理學導論'].sort(()=>R()-.5),L=[];let i=0;while(i<8){if(R()<.6){const lim=i<4?4-i:8-i,p=Math.min(lim,R()<.5?2:R()<.5?3:1);L.push({i,p,s:PD[i][0],e:PD[i+p-1][1],n:N.pop(),r:'A'+(1+R()*4|0)+pad(1+R()*20),sat:0,done:0,pen:0});i+=p}else i++}return L.length<3?mkTT():L}
+function showTT(){if(busy)return;busy++;let rows='';for(let i=0;i<8;i++){if(i==4)rows+='<tr><td>中午</td><td>12:00<br>12:50</td><td>午休・吃飯</td></tr>';const c=S.tt.find(c=>c.i==i),inn=S.tt.some(c=>i>c.i&&i<c.i+c.p);rows+=`<tr><td>第${PL[i]}節</td><td>${tm(PD[i][0])}<br>${tm(PD[i][1])}</td>${c?`<td rowspan=${c.p}>${c.n}<br>${c.r} ${c.sat?'✔':c.pen?'✘':''}</td>`:inn?'':'<td>空堂</td>'}</tr>`}
+ov.style.display='flex';ov.innerHTML=`<div class=box><h2>📅 今日課表</h2><table><tr><th>節次</th><th>時間</th><th>課程／教室</th></tr>${rows}</table><p>教學大樓 18:30 鎖門。</p><button id=cl>關閉</button></div>`;const cls=()=>{ov.style.display='none';kd=null;busy--};$('#cl').onclick=cls;kd=e=>{if('tT'.includes(e.key)||e.key=='Escape')cls()}}
+/* ---------- 地圖 ---------- */
+const O=a=>({x:a[0]*16,y:a[1]*16,w:a[2]*16,h:a[3]*16,c:a[4],n:a[5],k:a[6],a:a[7],ph:a[8]});
+const P_=(x,y,id,ph)=>[x,y,1,1,'','','p',id,ph],TR=(x,y)=>[x,y,2,2,'','','t'],BK=(x,y,w)=>[x,y,w,2,'#5d4037','書架','d'],BIKE=(x,y)=>[x,y,3,2,'#78909c','腳踏車','i','bike'],WT=(x,y)=>[x,y,2,3,'#cfd8dc','飲水機','i','water'],TB=(x,y)=>[x,y,4,2,'#a1887f','','d'];
+const M={
+dorm:{f1:'#7a5c43',f2:'#70533c',w:'#3b2a4a',win:[3,19],dt:'#8a6b50',o:[[10,10,8,5,'#e57373','','f'],[11,11,6,3,'#ef9a9a','','f'],
+[2,3,6,4,'#5c6bc0','床','i','bed'],[2,3,6,1,'#e8eaf6','','d'],[8,3,1,1,'#ffd54f','鐘','d'],[21,3,6,3,'#455a64','電腦','i','pc'],[9,2,2,2,'#b0bec5','鏡子','i','mirror'],[12,2,3,2,'#8d6e63','衣櫃','i','closet'],[17,2,2,3,'#cfd8dc','冰箱','i','fridge'],
+[24,13,4,5,'#80cbc4','廁所','i','wc'],[2,12,3,3,'#6d4c41','書桌','i','study'],[20,8,3,2,'#a1887f','吉他','i','guitar'],[20,13,3,3,'#eceff1','洗衣機','i','wash'],WT(27,8),[13,18,4,2,'#ffb74d','出門','e',['street',4,6]]]},
+street:{f1:'#6b7b8c',f2:'#64748a',dt:'#7d8da0',o:[[0,8,30,4,'#37474f','','f'],...Array.from({length:8},(_,i)=>[i*4+1,9.8,2,.3,'#fff59d','','f']),
+[2,2,6,4,'#8d6e63','租屋處','e',['dorm',14,16]],[12,2,6,4,'#c62828','校門口','e',['campus',14,16]],[21,2,6,4,'#26c6da','手搖飲料店','i','drink'],P_(24,6,'drinkc'),[8,2,3,3,'#f06292','娃娃機','i','claw'],[28,3,2,3,'#ffb74d','路邊攤','i','stall'],
+[2,13,6,4,'#43a047','便利商店','i','cvs'],[20,13,7,5,'#8e24aa','麻將館','e',['mj',14,16]],BIKE(14,13),P_(10,15,'amway','d'),P_(17,16,'cat'),P_(6,10,'rider','n'),P_(22,10,'dog','n'),TR(9,13),TR(28,13),[10,6,1,2,'#fdd835','路燈','d'],[18,6,1,2,'#fdd835','路燈','d']]},
+campus:{f1:'#4caf50',f2:'#459f49',dt:'#66bb6a',o:[[13,6,4,12,'#d7ccc8','','f'],[2,10,26,3,'#d7ccc8','','f'],
+[3,2,8,4,'#90a4ae','教學大樓','e',['class',7,6,[6,18.5]]],[19,2,8,4,'#ffa726','學餐','e',['caf',22,6,[7,20]]],[12,18,6,2,'#c62828','往校外','e',['street',14,7]],[26,14,3,3,'#80cbc4','廁所','i','wc'],
+[6,14,3,3,'#4fc3f7','噴水池','i','fount'],[11,15,3,1,'#8d6e63','長椅','i','bench'],[10,7,2,1,'#fff59d','公佈欄','i','board'],[24,7,1,2,'#e53935','販賣機','i','vend'],[19,13,5,4,'#c68642','籃球場','i','hoop'],[4,7,3,2,'#ffcc80','社團攤位','i','stand'],BIKE(17,7),
+P_(8,11,'juan','d'),P_(18,11,'friend','d'),P_(22,9,'senior','d'),P_(13,8,'prof','d'),P_(15,16,'mj','d'),P_(8,11,'jog','n'),P_(14,9,'guard','n'),P_(22,9,'owl','n'),TR(1,14),TR(27,11),TR(10,17),TR(24,17)]},
+class:{f1:'#c5b08f',f2:'#bda684',w:'#6d4c41',win:[2,25],dt:'#cdbb9c',o:[[6,2,18,1,'#2e7d32','黑板','d'],[12,3,6,2,'#8d6e63','講台','d'],
+...[7,9,11,13].flatMap(y=>[3,9,15,21].map(x=>[x,y,3,1,'#a1887f','','d'])),[3,15,3,1,'#c9a27a','你的座位','i','seat'],P_(8,5,'juan'),[13,18,4,2,'#ffb74d','走廊','e',['campus',7,6]]]},
+caf:{f1:'#ffe0b2',f2:'#ffd9a0',w:'#bf6f2b',win:[3,23],dt:'#ffeccc',o:[[5,3,20,2,'#8d6e63','餐檯（點餐）','i','food'],P_(14,2,'boss'),TB(4,8),TB(12,8),TB(20,8),TB(4,13),TB(20,13),P_(10,11,'friend'),WT(26,6),[13,18,4,2,'#ffb74d','出口','e',['campus',22,6]]]},
+mj:{f1:'#4e342e',f2:'#45302a',w:'#2a1b2e',win:[],dt:'#5d4037',o:[[11,2,8,2,'#a1887f','櫃台','d'],P_(14,4,'mjboss'),[4,6,5,5,'#2e7d32','麻將桌','i','mj'],[20,6,5,5,'#2e7d32','麻將桌','i','mj'],P_(10,13,'mj'),P_(24,14,'drunk'),[2,14,3,3,'#6d4c41','神明桌','d'],[13,18,4,2,'#ffb74d','出口','e',['street',23,12]]]},
+gym:{f1:'#546e7a',f2:'#4d6573',w:'#263238',win:[2,26],dt:'#607d8b',o:[[3,4,3,3,'#37474f','跑步機','i','tread'],[8,4,3,3,'#37474f','跑步機','i','tread'],[18,4,5,3,'#b71c1c','臥推架','i','lift'],[25,4,3,2,'#78909c','啞鈴架','d'],[11,2,6,1,'#b3e5fc','鏡牆','d'],[3,10,2,3,'#bf360c','沙包','i','bag'],[8,12,2,2,'#eceff1','體重計','i','scale'],[20,12,6,2,'#8d6e63','櫃台','d'],P_(23,10,'trainer'),P_(14,8,'gymbro'),WT(27,12),BIKE(3,16)]},
+lib:{f1:'#a1887f',f2:'#98796d',w:'#4e342e',win:[13],dt:'#b19384',o:[BK(3,3,6),BK(11,3,6),BK(19,3,6),[3,7,6,2,'#6d4c41','書架（借書）','i','shelf'],[12,9,6,3,'#d7ccc8','閱覽桌','i','read'],[20,9,6,3,'#d7ccc8','閱覽桌','i','read'],[3,13,7,2,'#8d6e63','櫃台','d'],P_(5,12,'libn'),P_(14,14,'nerd'),[26,14,2,2,'#eceff1','影印機','i','copy'],WT(27,6),BIKE(8,16)]},
+snack:{f1:'#3e2723',f2:'#37221f',w:'#1a1a1a',win:[],dt:'#4e342e',o:[[4,3,12,3,'#ff8f00','宵夜攤','i','snk'],P_(9,2,'snkb'),TB(4,9),TB(12,9),TB(20,9),TB(4,14),TB(20,14),[22,2,5,2,'#212121','電視','d'],P_(13,12,'owl'),P_(26,12,'rider'),[26,5,2,3,'#80deea','冷飲櫃','i','water'],BIKE(10,16)]}};
+Object.values(M).forEach(m=>m.o=m.o.map(O));
+const PN={dorm:'租屋處',street:'校外街道',campus:'校園',class:'教室',caf:'學餐',mj:'麻將館',gym:'健身房',lib:'圖書館',snack:'宵夜店'},SP={dorm:[14,16],street:[14,7],campus:[14,16],lib:[14,16],gym:[14,16],snack:[14,16]};
+/* ---------- NPC ---------- */
+const D={
+friend:{n:'朋友',c:'#4caf50',v:[['欸，你吃飯了沒？','還沒的話等下一起去學餐啊。'],['你昨天那份作業寫完了嗎？','我寫到一半就睡著了，哈哈。'],['最近天氣好怪，早上冷下午熱。','出門前記得看一下天氣啦。'],['我跟你說，隔壁班有人把學餐的筷子帶回家用。','一整把。我親眼看到的。'],['晚上要不要一起去吃點什麼？','我現在腦袋只剩下「餓」這個字。']],
+ f:async()=>{if(R()<.35){if(await ask('「欸，一起去走走吧？」',['好啊','我想自己晃晃'],'朋友')==0){ch('c',4);ch('s',4);adv(20);await say('','聊了一陣子，心情變好了。')}}}},
+mj:{n:'麻將仔',c:'#e53935',v:[['欸欸欸，三缺一！','你來你來，我保證只打一下下。'],['我昨天夢到我自摸了。','醒來之後我就決定今天一定要打。'],['課？什麼課？','我不知道，我只知道麻將館現在還有位子。'],['你知道一天只有二十四小時嗎？','所以更應該把其中的八小時拿來打麻將。']],
+ f:async()=>{if(S.map=='mj'){await say('麻將仔',S.inv?'「來了！快，那桌還缺一個。」':'「你也來啦？坐坐坐！」');return}if(await ask('「真的不來？就一下下！」',['好吧走啊','不了，我要認真生活'],'麻將仔')==0){S.inv=1;await say('麻將仔','「讚！麻將館見！」（他已經跑走了）')}else{ch('s',-1);await say('麻將仔','「你會後悔的……我昨天一把胡了。」')}}},
+juan:{n:'捲王',c:'#1e88e5',v:[['我昨天只睡三小時，因為在預習下週的進度。','唉，我真的不想這麼卷的。'],['期中考我只考了98分，應該算普通吧？','你們考幾分？不用說也沒關係，我只是好奇。'],['我昨天去圖書館，發現我是第一個到、最後一個走的。','我不是在炫耀，只是覺得有點孤單。'],['我不小心把整本課本寫完第二遍了。','本來只想複習一下的，真的。']],
+ f:async()=>{if(await ask('「所以你呢？昨天念了幾小時？」',['謙虛地說「沒念」','跟他比慘'],'捲王')==0){ch('s',-3);await say('捲王','「真的假的？我也沒念啦，只念到凌晨三點而已。」')}else{ch('a',1);ch('s',-2);ch('c',1);await say('捲王','「哇，你好努力。我只是隨便念念。」')}}},
+prof:{n:'教授',c:'#6d4c41',v:[['同學，你好像有點眼熟。','你是我這學期的學生嗎？……沒關係，期末見。'],['年輕人，時間是很寶貴的。','就像我現在站在這裡跟你聊天一樣。'],['最近有人問我，為什麼要考那麼難。','我說：因為我當年也是這樣被考的。']],
+ f:async()=>{if(S.tt.some(c=>c.pen))await say('教授','「對了，我的點名簿上，有人的名字旁邊沒有勾。」')}},
+amway:{n:'傳銷學長',c:'#fdd835',v:[['學弟！你有沒有想過，你的人生還有更多可能？','我這裡有個「被動收入」的機會。'],['你知道我上個月靠「團隊」賺了多少嗎？','不多，剛好買一台二手腳踏車而已。'],['來喝杯茶吧，不用錢。','我只想跟你聊聊「財富自由」。']],
+ f:async()=>{if(await ask('他把一疊傳單塞進你手裡。',['聽他講完','婉拒並快步離開'])==1){ch('s',1);return}adv(30);ch('s',-4);ch('e',-4);await say('傳銷學長','「只要三百元入會，下個月你就是學長了！」');if(await ask('要加入嗎？',['加入（$300）','我再考慮一下'])==0){if(S.m<300)await say('','你的錢不夠。學長露出了「那你還來幹嘛」的表情。');else{ch('m',-300);ch('s',-6);await say('','你拿到一本《致富聖經》和一條領帶。')}}else ch('c',-2)}},
+boss:{n:'學餐老闆',c:'#ff7043',v:[['今天雞腿便當限量喔！','晚來就沒有囉。'],['加飯不加價，加菜加價。','這是我們的規矩。'],['同學，吃完記得把餐盤收一下。','不然下次雞腿會自己消失。']]},
+mjboss:{n:'老闆娘',c:'#ab47bc',v:[['輸了不要哭，贏了要請客。','這是我們這行的規矩。'],['桌上的茶免費，瓜子要錢。','不過我看你像是會剝很多瓜子的人。'],['樓上有人從早上打到現在了。','你千萬別學他。']]},
+drunk:{n:'醉醺醺的大叔',c:'#8d6e63',v:[['我年輕的時候，一把胡過十八台……','沒人信我。你信嗎？'],['孩子，聽阿伯一句：牌桌上，沒有朋友。','只有下一張牌。'],['嗝……你有看到我的錢包嗎？','算了，反正裡面也沒錢。']]},
+drinkc:{n:'飲料店店員',c:'#00acc1',v:[['今天買一送一……是昨天的活動。','嗯，我們今天沒有。'],['要幾分糖？其實我個人建議無糖。','但我知道你們都選全糖。'],['珍珠煮太久會變硬，煮太少會太軟。','人生也是這樣。']]},
+cat:{n:'野貓',c:'#ff9800',v:[['喵。','（貓咪看了你一眼，好像在審判你的人生。）'],['（野貓正舒服地曬太陽，完全不在乎期中考。）','你好羨慕。'],['喵～','（牠轉頭離開，留下一個高傲的背影。）']]},
+senior:{n:'直屬學姊',c:'#ec407a',v:[['學弟妹，期中考考古題我有。','一份一百，童叟無欺。'],['我當年也是在這個地方死掉的。','所以我整理了一份「存活指南」。'],['期末考的考古題只剩最後一份了。','我是看你順眼才說的。']],
+ f:async()=>{if(await ask('要買考古題嗎？',['買（$100）','不用，我靠實力'])==0){if(S.m<100)await say('直屬學姊','「沒錢？那你先去搬磚。」');else{ch('m',-100);ch('a',8);await say('直屬學姊','「祝你好運。有些題目是兩年前的，別問。」')}}else ch('s',2)}}};
+const N2={
+guard:{n:'警衛',c:'#455a64',v:[['同學，這麼晚還在外面？','記得早點回去睡覺。'],['教學大樓十八點半鎖門。','想夜遊教室？門都沒有。'],['我在這裡值班三十年了。','你是第一個半夜問我廁所在哪的。']]},
+jog:{n:'夜跑者',c:'#00bcd4',v:[['呼……呼……','（他戴著耳機，完全沒聽到你）'],['夜跑是我一天最自由的時刻。','你要不要也一起？……算了。'],['我跑了五公里。','然後我要去吃宵夜，這樣才叫平衡。']]},
+owl:{n:'夜貓子',c:'#7e57c2',v:[['我已經三天沒有在十二點前睡過了。','我的 GPA 跟我的睡眠一起消失了。'],['宵夜是人類最偉大的發明。','熬夜是最爛的。但我就是會。'],['晚上十一點到兩點，是靈感最多的時候。','白天都是廢物。']]},
+rider:{n:'外送員',c:'#2e7d32',v:[['抱歉讓一下，我有訂單要送。','客人說「五分鐘內」。我只有三分鐘。'],['今天已經跑了三十單。','你們學生都吃得很晚。']]},
+dog:{n:'流浪狗',c:'#a1887f',v:[['汪！','（牠對你搖尾巴，但你不確定牠是不是在開心。）'],['（流浪狗躺在路燈下，肚子一起一伏。）','你想伸手……還是算了。'],['汪汪。','（牠盯著你手上的食物。）']]},
+trainer:{n:'健身教練',c:'#ef6c00',v:[['同學，你的姿勢是不是有點……創新？','沒事，我只是想說：腰要挺。'],['蛋白質，蛋白質，還是蛋白質。','你知道一天要吃多少嗎？我也不知道，但越多越好。'],['沒有痛，就沒有收穫。','但也不要真的痛到去急診。']]},
+gymbro:{n:'肌肉男',c:'#d84315',v:[['兄弟，今天練胸還是練腿？','不要跟我說你兩個都不練。'],['我這個月已經增肌 0.3 公斤。','靠的是意志，和半打雞胸肉。'],['你這手臂……','……沒事，每個人都有自己的起點。']]},
+libn:{n:'圖書館管理員',c:'#6d4c41',v:[['請保持安靜。','（他說這句話時，音量比你還大。）'],['借書請出示證件。','還書逾期每天罰一元，日積月累很可怕。'],['本館禁止飲食。','我說的是「禁止」，不是「建議」。']]},
+nerd:{n:'戴眼鏡同學',c:'#5c6bc0',v:[['噓——','我在讀書。你呢？'],['這本書我看了三遍了。','每次都有新的發現：我真的不懂。'],['你有看到我的筆嗎？','……在我耳朵上。謝謝。']]},
+snkb:{n:'宵夜店老闆',c:'#f9a825',v:[['鹽酥雞要辣不要辣？','我們的辣不是辣，是一種人生態度。'],['最近客人都吃得很晚。','你們要小心身體。但我還是要賣你。'],['臭豆腐的味道，是我們最驕傲的武器。','請站遠一點，不然你會被牽著走。']]}};
+Object.assign(D,N2);['friend','mj','juan','cat','amway','senior','prof','drunk','jog','owl','rider','dog','gymbro','nerd','trainer'].forEach(k=>D[k].w=1);D.cat.an=1;D.dog.an=1;
+const Q={
+boss:{to:'libn',get:'direct',txt:'把便當送去圖書館給管理員',off:'「同學，幫我把這個便當送去圖書館給管理員，我給你跑腿費。」',done:'「哦，我的便當！謝謝你。」',rew:()=>ch('m',120),msg:'+$120'},
+friend:{to:'friend',get:'drink',txt:'替朋友買一杯手搖（飲料店）',off:'「欸，幫我買一杯手搖好不好？我錢給你。」',done:'「讚啦！你人真好。」',rew:()=>{ch('c',10);ch('m',60)},msg:'社交+10、$60'},
+senior:{to:'senior',get:'shelf',txt:'去圖書館幫學姊借書',off:'「學弟妹，能不能幫我去圖書館借一本書？我腳痠。」',done:'「謝啦，這本書救了我的期末。」',rew:()=>{ch('a',8);ch('c',3)},msg:'學業+8'},
+owl:{to:'owl',get:'snack',txt:'替夜貓子買宵夜（宵夜店）',off:'「兄弟，能不能幫我帶一份宵夜？我快餓死了。」',done:'「你是我的救世主！」',rew:()=>{ch('m',80);ch('s',5)},msg:'+$80'},
+trainer:{to:'gymbro',get:'direct',txt:'把蛋白粉交給肌肉男',off:'「幫我把這罐蛋白粉拿給那邊那位兄弟。」',done:'「哦，終於來了。」',rew:()=>{ch('e',15);ch('s',4)},msg:'精力+15'}};
+async function talk(id){const d=D[id],q=S.q;if(q&&q.to==id&&q.have){await say(d.n,q.done);q.rew();toast('任務完成！'+q.msg);S.qn++;S.qd[q.from]=1;S.q=0;return}
+ for(const l of pk(d.v))await say(d.n,l);
+ if(Q[id]&&!S.q&&!S.qd[id]&&R()<.7){const t=Q[id];if(await ask(t.off,['沒問題','我現在沒空'],d.n)==0){S.q={...t,from:id,have:t.get=='direct'?1:0};await say('','【任務】'+t.txt)}}else if(d.f)await d.f()}
+/* ---------- 互動物件 ---------- */
+const eat=(f,w)=>{ch('f',f);ch('w',w||0)};
+async function nap(d){await fp('bed','你閉上眼睛……');S.nap+=d;ch('e',d/60*9);ch('s',4);adv(d);await say('',`……你醒了。手機螢幕顯示 ${clk()}。`)}
+const A={
+bed:async()=>{if(S.t<17*60){if(await ask('要小睡一下嗎？',['躺下去','算了'])==0)await nap(60+R()*150|0)}else{const k=await ask('這張床看起來很舒服。',['睡覺','小睡一下','再撐一下']);if(k==0)return end(dayEnd());if(k==1)await nap(60+R()*150|0)}},
+pc:async()=>{await fp('pc','你按下電源鍵。');const k=await ask('開機。要做什麼？',['看影片','玩電腦遊戲（瓦羅蘭／APEX）','寫作業','關機']);
+ if(k==0){await say('',`你點開了${pk(['「30 分鐘看懂量子力學」','「貓咪做壞事被抓包合集」','「某實況主翻車精華」','「如何三天學會一個月的內容」'])}……`);const d=R()<.35?180:60;adv(d);ch('s',9);ch('e',-4);await say('',d>60?'回過神來，窗外的天色已經不一樣了。':'看完了。你好像學到了什麼。')}
+ if(k==1){const x=await ask('今天玩哪個？',['瓦羅蘭','APEX']);S.gm++;const h=await aim(x?'APEX：開槍！':'VALORANT：爆頭！',9);adv(120);ch('e',-10);if(h>=7){ch('s',12);ch('c',2);await say('隊友',x?'「大哥帶我！」':'「ACE！」')}else{ch('s',-6);await say('隊友','「你是不是在玩手機？」')}}
+ if(k==2){adv(50);ch('a',6);ch('e',-8);ch('s',-3);await say('','你寫完了一部分作業。剩下的……明天的你會處理。')}},
+study:async()=>{adv(50);ch('a',5);ch('e',-6);ch('s',-2);await say('','你坐在書桌前，把課本翻了一輪。大概有吸收到一點點。')},
+mirror:async()=>{adv(3);ch('s',R()<.5?3:-3);await say('',pk(['你對著鏡子擠出一個自信的笑容。','你發現自己的黑眼圈又加深了。','你說：「今天也是帥（美）的一天。」']))},
+guitar:async()=>{adv(20);if(await timing('抓準節拍，彈出和弦！')){ch('s',8);await say('','整首完整彈完。你被自己感動了。')}else{ch('s',-2);await say('','隔壁敲牆壁了。')}},
+wash:async()=>{adv(5);ch('s',1);await say('','你把衣服丟進洗衣機。（洗衣精好像快沒了。）')},
+water:async()=>{adv(2);eat(0,22);await say('','咕嚕咕嚕。水喝起來有一點冰。')},
+closet:async()=>{adv(5);if(R()<.3){ch('m',20);await say('','你在外套口袋裡發現了 $20。')}else await say('',pk(['你找了一陣子，還是找不到另一隻襪子。','衣櫃裡的衣服看起來都差不多。','你翻出一件還沒拆吊牌的衣服。']))},
+fridge:async()=>{adv(3);if(R()<.5){eat(12,8);await say('','你找到半條吐司和一瓶水，邊走邊吃。')}else{ch('s',-2);await say('','冰箱裡只有一瓶過期的美乃滋與一片孤獨的檸檬。')}},
+wc:async()=>{if(S.ur){S.ur=0;await say('','衝進去！！');if(await mash('忍住！衝！',4,20,'連打衝刺')){ch('s',8);await say('','……舒坦。這是今天最大的勝利。')}else{ch('s',-12);ch('c',-5);await say('','差一點點。就差那麼一點點。')}adv(15)}else{adv(15);ch('s',2);await say('','什麼事也沒發生。你在裡面滑了十五分鐘手機。')}},
+food:async()=>{const m=[['雞腿便當',90,10,45,5],['滷肉飯',50,6,30,0],['排骨麵',70,8,35,8],['水煮蛋',15,2,12,0]];const k=await ask('老闆：「要吃什麼？」',m.map(x=>x[0]+' $'+x[1]).concat('先不要'));if(k>3)return;let[n,p,e,f,w]=m[k];if(S.m<p)return say('','錢不夠。你默默看了看菜單最底下的價格。');
+ if(k==0&&R()<.5){await say('老闆','「雞腿只剩最後一個囉～」');await say('','旁邊也有人伸出了手！');if(!await mash('搶雞腿！！',3,16,'連打')){await say('','便當被搶走了。你拿到一份筋很多的雞胸肉。');ch('s',-4);p=70;e=8;f=38;n='雞胸便當'}else{await say('','你贏了。這個便當格外香。');ch('s',5)}}
+ ch('m',-p);await fp('eat','開動！');eat(f,w);ch('e',e);adv(30);ch('s',3);await say('',`吃完了${n}。`)},
+drink:async()=>{const m=[['珍珠奶茶',60,30],['多多綠',55,28],['冰美式',50,25],['楊桃湯',45,25]];const k=await ask('店員：「請問要喝什麼？」',m.map(x=>x[0]+' $'+x[1]).concat('不用了'));if(k>3)return;if(S.m<m[k][1])return say('','錢包比你的人生還空。');const q=await ask('甜度？',['全糖','半糖','無糖']);ch('m',-m[k][1]);adv(10);ch('s',[10,6,3][q]);eat(0,m[k][2]);if(k==2)ch('e',12);ch('e',[3,1,0][q]);if(S.q&&S.q.get=='drink')S.q.have=1;await say('',q==0?'甜到靈魂都在發光。':'你默默吸了一口。好喝。')},
+cvs:async()=>{const m=[['泡麵',35],['御飯糰',32],['提神飲料',30],['瓶裝水',15],['刮刮樂',50]];const k=await ask('叮咚～歡迎光臨。',m.map(x=>x[0]+' $'+x[1]).concat('算了'));if(k>4)return;if(S.m<m[k][1])return say('','你把東西放了回去。');ch('m',-m[k][1]);adv(8);
+ if(k==0){eat(30,-3);ch('e',5);await say('','你站在便利商店的窗邊把它吃完了。')}if(k==1){eat(20);ch('e',3);await say('','還是溫的。')}if(k==2){ch('e',15);eat(0,8);ch('s',-2);await say('','你的心跳變得很有存在感。')}if(k==3){eat(0,25);await say('','好喝。就是水。')}
+ if(k==4){if(R()<.15){ch('m',200);ch('s',10);jg([784,988,1175]);await say('','中了 $200！')}else{ch('s',-3);await say('','「銘謝惠顧」。')}}},
+stall:async()=>{if(S.m<30)return say('','你看了看價格，默默走開。');ch('m',-30);adv(5);eat(14,-2);ch('s',3);await say('','熱騰騰的雞蛋糕。燙到舌頭也值得。')},
+claw:async()=>{if(S.m<20)return say('','你的口袋比娃娃機的爪子還鬆。');ch('m',-20);adv(10);if(await timing('娃娃機：在對的位置按下！')){ch('s',10);await say('','夾到了！一隻長得很不協調的熊。')}else{ch('s',-2);await say('','它在最後一刻鬆開了爪子。')}},
+fount:async()=>{if(S.m<10)return say('','你連一個十元硬幣都沒有。');ch('m',-10);adv(2);await say('',`你許願：${pk(['「希望期中考不要太難。」','「希望今天不要點名。」','「希望捲王消失。」','「希望我有錢。」'])}`);if(R()<.1){ch('a',4);await say('','池水閃了一下光。……可能是反光。')}},
+bench:async()=>{adv(20);ch('s',4);ch('e',3);await say('','你在長椅上放空了一陣子。')},
+board:async()=>{adv(2);await say('',pk(['「徵求家教，時薪 NT$400」（電話被撕走了）','「失物招領：一隻左腳的拖鞋」','「麻將社招新，不限實力，只限熱情」','「學務處公告：請勿餵食校貓」']))},
+vend:async()=>{if(S.m<25)return say('','投幣口沒有任何反應。');ch('m',-25);adv(2);ch('e',4);ch('s',2);eat(0,12);await say('','咚。罐裝飲料掉了出來。')},
+hoop:async()=>{adv(30);let k=0;for(let i=0;i<3;i++)if(await timing(`投籃 ${i+1}/3：抓準時機！`))k++;ch('e',-8);ch('w',-8);ch('s',k*3);ch('c',k>=2?3:0);await say('',`三球進了 ${k} 球。${k==3?'全場歡呼（只有你自己）':''}`)},
+stand:async()=>{adv(5);await say('社團學長','「要不要加入我們社團？有送糖果！」');if(await ask('',['簽名拿糖果','走開'])==0){ch('s',3);ch('c',2);eat(3);await say('','你拿到一顆糖，還有一張根本不會看的傳單。')}},
+seat:async()=>{if(await ask('沒課的教室安安靜靜的。',['趴下睡一下','發呆一下'])==0)await nap(40+R()*80|0);else{adv(20);ch('s',3)}},
+bike:async()=>{const Tb={lib:['圖書館',8,22],gym:['健身房',6,23],snack:['宵夜店',17,26],campus:['校園',0,24],street:['校外街道',0,24]};const ks=Object.keys(Tb).filter(k=>k!=S.map);const k=await ask('要去哪裡？',ks.map(x=>Tb[x][0]).concat('算了'));if(k>=ks.length)return;const d=ks[k];if(!opn([Tb[d][1],Tb[d][2]]))return say('','你想起來——那裡現在沒開。');
+ if(await ask('怎麼去？',['騎車（小遊戲）','走路（很久）'])==0){const cr=await bike();S.crash+=cr;adv(8+cr*6);ch('e',-3-cr*3);ch('s',-cr*3);await say('',cr?`中途撞到了 ${cr} 次。你的膝蓋有意見。`:'一路順暢，風很舒服。')}else{adv(40);ch('e',-6);ch('w',-6)}
+ S.map=d;S.x=SP[d][0]*16;S.y=SP[d][1]*16},
+tread:async()=>{if(S.e<15)return say('','你累到站不穩，不適合再跑了。');adv(40);S.gym++;const ok=await mash('跑步機：加速！',8,40,'狂踩');ch('e',ok?-12:-16);ch('s',ok?7:2);ch('w',-10);ch('f',-6);await say('',ok?'你跑完了，整個人在發光（是汗）。':'你被跑步機甩了出去。')},
+lift:async()=>{if(S.e<15)return say('','你的手臂在發抖，今天先別了。');adv(30);S.gym++;const ok=await mash('臥推：用力推！',5,24,'推');ch('e',ok?-12:-15);ch('s',ok?6:-2);ch('w',-8);await say('',ok?'槓鈴穩穩地推了上去。':'教練趕過來幫你把槓鈴扛起來。')},
+bag:async()=>{adv(10);S.gym++;if(await react('出拳時機：變綠就出拳！',450)){ch('s',7);ch('e',-4);await say('','砰！沙包晃得很漂亮。')}else{ch('s',-1);await say('','你打到了空氣。')}},
+scale:async()=>{adv(2);ch('s',-2);await say('','體重計顯示了一個數字。你默默把腳移開，假裝沒看到。')},
+read:async()=>{adv(50);S.lib++;ch('a',7);ch('e',-6);if(R()<.2){await say('','你看著看著，眼皮越來越重……');await nap(30)}else await say('','你在安靜的閱覽室裡讀了一整節的書。很罕見。')},
+shelf:async()=>{adv(8);ch('a',1);if(S.q&&S.q.get=='shelf'&&!S.q.have){S.q.have=1;await say('','你在書架上找到了學姊要的那本書。')}else await say('',pk(['你抽出一本書，封面寫著《如何在一天內學會所有事》。','你找到一本看起來很貴的字典。','書架最底層全是上個世紀的期刊。']))},
+copy:async()=>{if(S.m<2)return say('','你連兩塊錢都沒有。');ch('m',-2);adv(3);ch('a',1);await say('','你印了一份筆記。紙還是熱的。')},
+snk:async()=>{const m=[['鹽酥雞',80,32,0],['臭豆腐',60,26,0],['滷味',70,28,3],['冰紅茶',25,0,22]];const k=await ask('老闆：「要什麼？」',m.map(x=>x[0]+' $'+x[1]).concat('不用'));if(k>3)return;if(S.m<m[k][1])return say('','錢不夠。老闆看你的眼神很同情。');ch('m',-m[k][1]);adv(20);eat(m[k][2],m[k][3]);if(k<3)S.snk++;ch('s',6);if(S.q&&S.q.get=='snack')S.q.have=1;await say('','深夜的香氣，最讓人無法抗拒。')},
+mj:async()=>{const k=await ask('一桌三缺一。要玩嗎？',['小玩 $100','大玩 $300','不了']);if(k==2)return;const b=k?300:100;if(S.m<b)return say('老闆娘','「沒錢別上桌喔～」');await fp('mj','你坐了下來。洗牌聲嘩啦嘩啦。');const r=await mjg(b);adv(90);S.mj+=r;ch('m',r);ch('s',r>0?8:r<0?-8:0);ch('e',-6);if(r>=300)jg([784,988,1175,1568])}};
+async function phone(){if(busy)return;const k=await ask('📱 要做什麼？',['滑 IG','荒野亂鬥 Lite','看群組訊息','收起來']);if(k==3)return;S.ph++;
+ if(k==0){if(R()<.4){await say('IG','你點開了一支「AI 生成」的影片……');await aiVid();S.ai++;ch('s',R()<.5?6:-5);ch('e',-2);adv(20)}else{const p=pk([['有人曬出了你沒被邀請的聚餐。',-4],['一支貓咪跌倒的影片，你重播了十次。',6],['前任的限時動態。你退出，又點進去。',-6],['某網紅分享「早起的十個好處」，發文時間是中午。',3],['同學的 po 文：「又是被作業追殺的一天。」',1]]);await say('IG',p[0]);ch('s',p[1]);ch('c',1);adv(30)}}
+ if(k==1){adv(30);const n=await brawl();if(n>=8){ch('s',8);await say('',`擊倒 ${n} 隻！獎盃 +8，成就感 +100。`)}else{ch('s',-5);await say('',`只擊倒 ${n} 隻。你被盜版怪物追殺了整場。`)}}
+ if(k==2){adv(10);await say('群組',pk(['「有人要團購嗎？」','「教授說期末改成口試」（疑似假消息）','家人：「錢夠不夠用？」你：「……夠。」','「有人有昨天的筆記嗎？」（已讀 47）']))}}
+/* ---------- 事件 ---------- */
+const OUT=()=>['street','campus'].includes(S.map);
+const EV=[
+()=>{if(S.urN<2&&!S.ur){S.urN++;S.ur=S.t+45;toast('……肚子一陣絞痛。')}},
+async()=>{if(S.t>22*60)return;await say('📱','手機震動了一下。');if(await ask('朋友：「欸，晚點打麻將嗎？缺人！」',['好啊，麻將館見','在忙，改天'])==0){S.inv=1;await say('','你回了一個「OK」貼圖。')}else ch('s',-1)},
+async()=>{await say('📱','IG 推播：「捲王：今天只念了十二小時，好累。」');ch('s',-3)},
+()=>{ch('m',50);toast('你在路邊撿到 $50。（要還給失主嗎？……算了。）')},
+async()=>{await say('📱','朋友傳來一張你的醜照，附上「哈哈哈哈」。');ch('s',-3);ch('c',1)},
+()=>{if(S.f<45)toast('隱約聞到學餐飄來的香味。')},
+()=>{if(OUT()){ch('s',3);toast('一隻野貓跟了你一段路，然後頭也不回地走了。')}},
+async()=>{if(!OUT())return;await say('','天空忽然暗了下來，下起了雨。');if(await ask('你沒帶傘。',['衝進最近的屋簷','在雨中慢慢走'])==0){ch('e',-3);adv(10)}else{ch('s',R()<.5?5:-6);ch('e',-5);adv(15);await say('',pk(['你覺得自己像偶像劇的主角，直到打了一個噴嚏。','衣服濕透了，但你的心情意外地平靜。']))}},
+async()=>{if(night()||S.map!='campus')return;if(await ask('教授攔住你：「那位同學，我問你個問題。」',['認真回答','假裝沒聽到'],'教授')==0){if(R()<.5){ch('a',4);ch('c',2);await say('教授','「不錯。」')}else{ch('s',-5);await say('教授','「嗯……回去再想想。」')}}else{ch('c',-3);ch('a',-1)}},
+async()=>{if(!night()||S.map!='campus')return;await say('警衛','「同學！這麼晚在校園晃什麼？」');if(await ask('手電筒照在你臉上。',['老實說「在晃」','假裝路過'])==0){ch('s',-2);await say('警衛','「早點回去睡覺。」')}else{ch('c',-2);await say('警衛','「路過還走了三圈？」')}},
+async()=>{if(!night()||!OUT())return;await say('','背後傳來急促的腳步聲……是野狗！');if(await mash('快跑！',3,16,'狂奔'))ch('s',3);else{ch('s',-8);ch('e',-6);await say('','你被舔了一臉，但驚嚇是真的。')}},
+async()=>{await say('📱','學姊：「考古題更新了，需要的話跟我說。」')},
+async()=>{if(S.map=='dorm')return;await say('📱','手機只剩 5% 的電了。');ch('s',-3)},
+async()=>{await say('📱','校園廣播：「請遺失一隻左腳拖鞋的同學，前往學務處。」');ch('s',2)}];
+function hr(h){ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
+ if(h==12)toast('中午了。學餐那邊開始排隊了。');if(h==24)toast('已經午夜了……');if(S.f<25&&R()<.6)toast('你的肚子發出了不祥的叫聲。');if(S.w<25&&R()<.6)toast('喉嚨乾得快冒煙了。');if(R()<.3)ev.push(pk(EV))}
+function adv(m){const o=S.t;S.t+=m;for(let h=Math.floor(o/60)+1;h<=Math.floor(S.t/60);h++)hr(h)}
+/* ---------- 上課 ---------- */
+function classGame(c,d){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><canvas id=cg width=480 height=270 style="width:100%;image-rendering:pixelated"></canvas><p id=ci style="margin:4px">黑板上冒出重點時，點它來抄筆記（空白鍵也行）。教授轉身才敢偷懶，轉頭前會有預兆。</p><div><button data-m=0>1 聽課抄筆記</button><button data-m=1>2 偷滑手機</button><button data-m=2>3 趴下偷睡</button><button data-m=3>4 溜出教室</button></div></div>`;
+const cv2=$('#cg'),x=cv2.getContext('2d'),WD=['重點！','考試會考','∫ 2x dx','F = ma','期中範圍','Python','這很重要','記起來'],TOT=24*30;x.font='14px DotGothic16,sans-serif';
+let mode=0,fr=0,ps=0,pt=100,chips=[],notes=0,caught=0,phS=0,slS=0,dz=0,forced=0,flash=0;
+const say_=t=>$('#ci').textContent=t;
+const catchIt=()=>{caught++;mode=0;forced=0;flash=20;say_('被教授發現了！');sfx(150,.25,'sawtooth')};
+const fin=lv=>{clearInterval(iv);kd=null;ov.style.display='none';busy--;r({left:lv,notes,caught,phS,slS,tot:Math.max(1,fr)})};
+const setM=m=>{if(m==3)return fin(1);if(forced&&m!=2)return;mode=m;if(ps==2&&(m==1||m==2))catchIt()};
+const cap=q=>{if(mode==0&&q){q.got=1;notes++;sfx(880,.05)}};
+ov.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setM(+b.dataset.m));
+kd=e=>{if(e.key.length==1&&'1234'.includes(e.key))setM(+e.key-1);if(e.key==' ')cap(chips.find(q=>!q.got))};
+cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect(),px=(e.clientX-b.left)/b.width*480,py=(e.clientY-b.top)/b.height*270;cap(chips.find(q=>!q.got&&Math.abs(q.x-px)<48&&Math.abs(q.y-py)<18))};
+const iv=setInterval(()=>{fr++;pt--;
+ if(pt<=0){if(ps==0){ps=1;pt=26;say_('……教授的腳步聲停下來了。')}else if(ps==1){ps=2;pt=50+R()*40|0;if(mode==1||mode==2)catchIt()}else{ps=0;pt=90+R()*80|0;say_('教授轉回黑板繼續寫。')}}
+ if(fr%48==0)chips.push({x:120+R()*240,y:55+R()*70,t:100,w:pk(WD)});chips.forEach(q=>q.t--);chips=chips.filter(q=>q.t>0);
+ if(mode==2){dz=Math.max(0,dz-.5);slS++}else{dz+=mode==0?.12:.05;if(mode==1)phS++}
+ if(dz>=100&&!forced){forced=60;mode=2;dz=60;say_('你的頭開始往下沉……')}
+ if(forced){forced--;if(ps==2&&mode==2)catchIt()}
+ if(flash>0)flash--;
+ x.textAlign='center';x.fillStyle='#d7ccc8';x.fillRect(0,0,480,270);x.fillStyle='#2e7d32';x.fillRect(70,24,340,112);x.fillStyle='#8d6e63';x.fillRect(0,170,480,100);x.fillStyle='#a1887f';x.fillRect(0,165,480,10);
+ const px=ps==0?200+Math.sin(fr/25)*70:224;x.fillStyle='#5d4037';x.fillRect(px,84,32,40);x.fillStyle='#ffcc99';x.fillRect(px+4,62,24,22);
+ if(ps){x.fillStyle='#000';x.fillRect(px+8,70,4,4);x.fillRect(px+20,70,4,4)}else{x.fillStyle='#3e2723';x.fillRect(px+4,62,24,22);x.fillStyle='#fff';x.fillRect(px-20,60+(fr%20),20,2)}
+ if(ps==1){x.fillStyle='#f44';x.font='28px sans-serif';x.fillText('!',px+16,56);x.font='14px DotGothic16,sans-serif'}
+ chips.forEach(q=>{if(q.got)return;x.fillStyle='#ffeb3b';x.fillRect(q.x-46,q.y-14,92,24);x.fillStyle='#000';x.fillText(q.w,q.x,q.y+4)});
+ x.fillStyle='#fffde7';x.fillRect(150,205,180,65);if(mode==1){x.fillStyle='#29b6f6';x.fillRect(215,195,60,60);x.fillStyle='#fff';x.fillRect(222,205,46,6)}else{x.fillStyle='#90a4ae';x.fillRect(165,218,110,3);x.fillRect(165,232,80,3)}
+ x.fillStyle='#ffcc99';x.fillRect(110,232,40,38);x.fillRect(330,232,40,38);
+ const lid=mode==2?110:dz*.6;x.fillStyle='#000';x.fillRect(0,0,480,lid);x.fillRect(0,270-lid,480,lid);
+ if(flash>0){x.fillStyle=`rgba(255,0,0,${flash/40})`;x.fillRect(0,0,480,270)}
+ x.fillStyle='#fff';x.textAlign='left';x.fillText(`筆記 ${notes}　被抓 ${caught}　睡意 ${dz|0}%　${['聽課中','滑手機中','趴睡中'][mode]}`,8,262);x.fillStyle='#ff4fd8';x.fillRect(0,266,480*fr/TOT,4);
+ if(fr>=TOT)fin(0)},33)})}
+async function klass(c){S.inC=1;c.done=1;const late=S.t-c.s;await fp('class',late>25?'你推開教室的門。全班的視線同時轉向你。':`〈${c.n}〉開始了。你在座位上坐下。`);if(late>25){ch('c',-2);ch('s',-2)}
+ c.att=0;let first=1;
+ while(S.t<c.e&&S.map=='class'){const d=Math.min(50,c.e-S.t),rs=await classGame(c,d),sc=d/50;
+  if(rs.left){ch('a',-4);await say('','你貓著腰從後門溜了出去。');S.map='campus';S.x=7*16;S.y=6*16;adv(2);break}
+  c.sat=1;if(rs.notes>=4)c.att++;if(rs.phS>20)S.ph++;
+  ch('a',rs.notes*.6*sc);ch('e',-5*sc);ch('s',Math.min(10,rs.phS/30*.7)-2*sc);ch('e',Math.min(16,rs.slS/30));S.nap+=d*rs.slS/rs.tot;ch('c',-6*rs.caught);ch('a',-2*rs.caught);ch('s',-3*rs.caught);
+  if(rs.caught)await say('教授',pk(['「同學，我講的有比手機好看嗎？」','「後排那位同學，請你回答這題。」（你不會）','「睡得還好嗎？」']));else if(rs.notes>=8)toast('筆記抄得滿滿的。');
+  if(first&&R()<.4){first=0;await roll()}else if(!first&&!c.q&&R()<.45){c.q=1;const n=await quiz(c.att);ch('a',[-4,0,4,8][n]);await say('教授',n==3?'「全對？……你不像是會來上課的人。」':n==0?'「這次的小考……我不想講。」':`「小考結束。你答對了 ${n} 題。」`)}
+  else if(R()<.2){if(await ask('教授：「那邊那位同學，你來說說看。」',['舉手回答','假裝在寫筆記'],'教授')==0){if(R()<.5){ch('a',3);ch('c',2);await say('教授','「……還可以。」')}else{ch('s',-4);await say('教授','「嗯，有想法是好事，但不是這個。」')}}else ch('s',-1)}
+  first=0;adv(d);if(S.t<c.e){adv(10);toast('下課十分鐘……上課鐘響了。')}}
+ S.inC=0;if(S.map=='class'&&S.t>=c.e)await say('','下課了。教室瞬間活了過來。')}
+async function roll(){await say('教授','「來，點名。我念到名字的請舉手。」');if(R()<.55){if(await ask('隔壁同學小聲說：「幫我喊個到，拜託。」',['幫他喊到','裝沒聽到'])==0){if(await timing('趁教授轉身……')){ch('c',8);ch('s',3);await say('','成功蒙混過關。')}else{ch('c',-6);ch('a',-3);ch('s',-5);await say('教授','「剛剛是誰在講話？」')}}else ch('c',-3)}else{ch('a',1);await say('教授','「很好，全員到齊。」')}}
+/* ---------- 結局 ---------- */
+const E={expel:['被二一退學','學務處的信比鬧鐘還準時。你說：「可是我才玩了一天欸？」'],faint:['過勞昏倒','你倒下的那一刻，腦中浮現的是：「我的作業還沒交。」'],mad:['精神崩潰・出家','你看破紅塵，剃度出家。法號：已讀不回。'],soc:['社交達人','全校都認識你，連學校的貓都叫你學長。'],geek:['卷王附體','你已經不是人了，你是一台行走的筆記本。'],zen:['大徹大悟','San 值爆表。你看透了學分、考試與人生，微笑著走進夕陽。'],oh:['歐皇降臨','麻將桌上的神降臨在你身上。老闆娘偷偷把你的照片貼在牆上。'],sleep:['睡覺大師','你整天幾乎都在睡，而且睡得理直氣壯。'],lie:['躺平大師','一堂課都沒去，卻活得很安詳。教授：「你是哪位？」'],night:['熬夜修仙成功','天亮了，你還沒睡。修仙成功，只是明天的你要付帳。'],star:['模範大學生','全勤、認真、不翹課。你是教授心中的理想型，也是同學心中的捲王候補。'],gamer:['電競魂','你沒有上場比賽，但你的魂已經在戰場上了。'],phone:['低頭族代表','你的拇指今天跑了半個馬拉松。'],broke:['月底吃土','錢包空空如也，你開始研究免費試吃的時間表。'],pop:['人氣王','今天到處都有人跟你打招呼，你的手機通知多到變成一種噪音。'],norm:['平凡順利的一天','沒有大風大浪。就是平凡地、有點累地，過完了這一天。'],
+dehyd:['脫水送醫','你一整天只顧著做事，忘了喝水。救護車上，護理師說：「同學，水很便宜。」'],starve:['營養不良昏倒','你整天沒好好吃東西，終於在路邊坐了下來。路人問你：「需要幫忙嗎？」你說：「我想吃雞腿。」'],crash:['車禍進急診','你今天撞了太多次。腳踏車說：「我不幹了。」你在急診室被問：「你是怎麼騎的？」'],doze:['睡死在原地','過了午夜，你的身體先替你做了決定。你倒在原地呼呼大睡，明天的你會處理。'],dang:['被當邊緣','缺課太多，教授的點名簿上寫滿了你的名字。你說：「我只是……沒有去。」'],muscle:['健身魂','你今天把一半的人生花在健身房，剩下的一半拿來喘氣。肌肉在對你點頭。'],lib:['圖書館幽靈','你整天待在圖書館。管理員說：「你是我們這裡新來的書。」'],snackk:['宵夜成癮者','你今天的第三餐是宵夜，第四餐也是。胃：「我們談談。」'],brain:['腦袋被 AI 洗乾淨','你看了太多 AI 生成的影片，現在腦中只剩下「鯊魚穿球鞋」。'],quest:['跑腿王','全勤之外，你還接了一堆 NPC 的任務。你是這所學校的萬事通。']};
+function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(!a)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(a==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
+const DEATHS=['expel','faint','mad','dehyd','starve','crash'];
+function deathFx(k){S.over=1;let f=0;sfx(200,.4,'sawtooth',.06);const iv=setInterval(()=>{f++;S.fall=f;draw();g.setTransform(3,0,0,3,0,0);g.fillStyle=`rgba(180,0,0,${Math.min(.55,f/60)})`;g.fillRect(0,0,480,320);const rad=Math.max(0,260-f*3.4),gr=g.createRadialGradient(S.x+5,S.y,rad*.2,S.x+5,S.y,rad+30);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');g.fillStyle=gr;g.fillRect(0,0,480,320);if(f>15)txt('💀 你倒下了……',240,150,18,'#fff');if(f%12==0)sfx(180,.3,'sawtooth',.05);if(f>=80){clearInterval(iv);S.fall=0;S.dd=1;end(k)}},33)}
+function end(k){if(DEATHS.includes(k)&&!S.dd){deathFx(k);return}S.over=1;busy=0;const e=E[k],gr=S.a>=80?'A':S.a>=65?'B':S.a>=50?'C':S.a>=30?'D':'F';ov.style.display='flex';dlg.style.display='none';
+ ov.innerHTML=`<div class=box><h3>📜 今日成績單</h3><h2>${e[0]}</h2><p>${e[1]}</p><table><tr><td>學業評等</td><td>${gr}</td><td>出席</td><td>${S.tt.filter(c=>c.sat).length}/${S.tt.length}</td></tr><tr><td>社交</td><td>${S.c|0}</td><td>SAN 值</td><td>${S.s|0}</td></tr><tr><td>小睡</td><td>${(S.nap/60).toFixed(1)}h</td><td>麻將</td><td>${S.mj>=0?'+':''}${S.mj}</td></tr><tr><td>存款</td><td>$${S.m}</td><td>滑手機</td><td>${S.ph} 次</td></tr><tr><td>完成任務</td><td>${S.qn}</td><td>運動／讀書</td><td>${S.gym}／${S.lib}</td></tr></table><p>截圖分享你的結局吧！</p><button onclick="location.reload()">再活一天</button></div>`;jg([523,659,784,1047])}
+function chkEnd(){if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.s>=100)end('zen');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve')}
+/* ---------- 繪製 ---------- */
+const txt=(s,x,y,z,c)=>{g.font=`${z}px DotGothic16,'Noto Sans TC',sans-serif`;g.textAlign='center';g.lineWidth=2.5;g.strokeStyle='#000';g.strokeText(s,x,y);g.fillStyle=c;g.fillText(s,x,y)};
+function man(x,y,c,fr){const b=Math.sin(fr)>0?1:0;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,10,3);g.fillStyle='#37474f';g.fillRect(x+2,y+11+b,3,4-b);g.fillRect(x+7,y+12-b,3,3+b);g.fillStyle=c;g.fillRect(x+1,y+5,10,7);g.fillStyle='#ffcc99';g.fillRect(x+2,y,8,6);g.fillStyle='#3e2723';g.fillRect(x+2,y,8,2);g.fillStyle='#000';g.fillRect(x+4,y+3,1,1);g.fillRect(x+7,y+3,1,1)}
+function pet(x,y,c,fr,dog){const b=Math.sin(fr)>0?1:0,dk=dog?'#6d4c41':c;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,15,3);g.fillStyle=c;g.fillRect(x+2,y+7,11,6);g.fillRect(x+10,y+3,6,6);g.fillRect(x+10,y+(dog?1:0),2,3);g.fillRect(x+14,y+(dog?1:0),2,3);g.fillStyle=dk;g.fillRect(x+3,y+12,2,3+b);g.fillRect(x+10,y+12,2,4-b);g.fillRect(dog?x:x-1,dog?y+6:y+2,3,dog?3:5);g.fillStyle='#000';g.fillRect(x+12,y+5,1,1);g.fillRect(x+14,y+5,1,1);g.fillStyle='#ff80ab';g.fillRect(x+16,y+7,1,1)}
+function dObj(o){if(o.k=='p'){const d=D[o.a];if(d.an)pet(o.x+1,o.y,d.c,o.mvg?S.fr:0,o.a=='dog');else man(o.x+2,o.y,d.c,o.mvg?S.fr:0);txt(d.n,o.x+8,o.y-2,8,'#fff');return}
+ if(o.k=='t'){g.fillStyle='#5d4037';g.fillRect(o.x+13,o.y+20,6,12);g.fillStyle='#2e7d32';g.fillRect(o.x+2,o.y+2,28,22);g.fillStyle='#43a047';g.fillRect(o.x+6,o.y,20,8);g.fillStyle='#1b5e20';g.fillRect(o.x+2,o.y+20,28,4);return}
+ g.fillStyle=o.c;g.fillRect(o.x,o.y,o.w,o.h);g.fillStyle='rgba(255,255,255,.28)';g.fillRect(o.x,o.y,o.w,3);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(o.x,o.y+o.h-3,o.w,3);g.strokeStyle='#000';g.lineWidth=1;g.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-1);
+ if(o.h>=48&&o.w>=64&&o.k!='d')for(let i=8;i<o.w-12;i+=22){g.fillStyle='rgba(180,230,255,.75)';g.fillRect(o.x+i,o.y+10,12,10)}
+ if(o.k=='e'&&o.h>=48){g.fillStyle='#3e2723';g.fillRect(o.x+o.w/2-8,o.y+o.h-20,16,20)}
+ if(o.n)txt(o.n,o.x+o.w/2,o.y+(o.h>=48&&o.k!='d'?o.h-24:o.h/2+3),9,'#fff')}
+const OS=()=>{const n=night()?'n':'d';return M[S.map].o.filter(o=>!o.ph||o.ph==n)};
+function near(){let b=null,bd=1e9;for(const o of OS()){if(!'ipe'.includes(o.k))continue;const dx=Math.max(o.x-(S.x+10),0,S.x-(o.x+o.w)),dy=Math.max(o.y-(S.y+8),0,S.y-(o.y+o.h)),d=Math.hypot(dx,dy);if(d<9&&d<bd){bd=d;b=o}}return b}
+const ov2=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+function wander(dt){const L=OS();for(const o of L){if(o.k!='p'||!D[o.a].w)continue;if(o.hx==null){o.hx=o.x;o.hy=o.y;o.t=0}o.t-=dt;if(o.t<=0){o.t=1+R()*2.5;o.dx=pk([-1,0,0,1]);o.dy=pk([-1,0,0,1])}o.mvg=o.dx||o.dy;
+ const nx=o.x+o.dx*22*dt,ny=o.y+o.dy*22*dt;if(Math.abs(nx-o.hx)>40||Math.abs(ny-o.hy)>32||nx<2||nx>462||ny<30||ny>300)continue;const r={x:nx,y:ny,w:16,h:16};if(L.some(q=>q!=o&&'dipet'.includes(q.k)&&ov2(r,q))||ov2(r,{x:S.x,y:S.y,w:10,h:8}))continue;o.x=nx;o.y=ny}}
+function draw(){const m=M[S.map];g.setTransform(3,0,0,3,0,0);g.imageSmoothingEnabled=false;
+ for(let y=0;y<20;y++)for(let x=0;x<30;x++){g.fillStyle=(x+y)%2?m.f1:m.f2;g.fillRect(x*16,y*16,16,16);if((x*7+y*13)%5==0){g.fillStyle=m.dt;g.fillRect(x*16+4,y*16+5,2,2)}}
+ if(m.w){g.fillStyle=m.w;g.fillRect(0,0,480,32);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,28,480,4);for(const x of m.win){g.fillStyle='#b3e5fc';g.fillRect(x*16,6,28,16);g.fillStyle='#fff';g.fillRect(x*16+13,6,2,16)}}
+ const L=OS();L.filter(o=>o.k=='f').forEach(o=>{g.fillStyle=o.c;g.fillRect(o.x,o.y,o.w,o.h)});
+ const it=L.filter(o=>o.k!='f').map(o=>[o.y+o.h,()=>dObj(o)]);it.push([S.y+8,()=>{if(S.fall){g.save();g.translate(S.x+5,S.y+8);g.rotate(Math.min(S.fall,15)/15*Math.PI/2);g.translate(-S.x-5,-S.y-8)}man(S.x-1,S.y-8,'#ffeb3b',S.fr);if(S.fall)g.restore();txt('你',S.x+5,S.y-10,8,'#ffeb3b')}]);it.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
+ const h=hh(),al=OUT()?(h<17?0:h<19?(h-17)*.12:h<6?.38:.38):(h>=19||h<6?.15:0);if(al>0){g.fillStyle=`rgba(10,0,60,${al})`;g.fillRect(0,0,480,320)}
+ if(S.go&&!busy&&near()){g.fillStyle='#fff';g.fillRect(S.x-2,S.y-26,14,12);g.fillStyle='#000';g.fillRect(S.x-1,S.y-25,12,10);txt('E',S.x+5,S.y-16,9,'#ffeb3b')}}
+let hc=0;const bar=(l,v,c)=>`<span class=st>${l}<u><s style="width:${v}%;background:${v<=20?'#f44':c}"></s></u></span>`;
+function hud(){if(hc++%6)return;const c=cur(),nx=S.tt.find(c=>c.s>S.t),a=S.tt.filter(c=>c.sat).length;$('#hs').innerHTML=`<b>🕒${clk()}</b>　${PN[S.map]}　小睡 ${(S.nap/60).toFixed(1)}h　💰$${S.m}　出席 ${a}/${S.tt.length}　${S.ur?'<b style=color:#f66>肚子絞痛！</b>':''}<br>${c?'📖 上課中：'+c.n:nx?'⏭ 下一堂 '+tm(nx.s)+' '+nx.n+'（'+nx.r+'）':'今天沒課了'}${S.q?'<br>📌 '+S.q.txt+(S.q.have?'（已取得）':''):''}<br>${bar('學業',S.a,'#4caf50')}${bar('精力',S.e,'#ffeb3b')}${bar('社交',S.c,'#29b6f6')}${bar('SAN',S.s,'#ba68c8')}${bar('飽食',S.f,'#ff9800')}${bar('水分',S.w,'#4fc3f7')}`}
+/* ---------- 主迴圈 ---------- */
+const hit=(x,y,o)=>x<o.x+o.w&&x+10>o.x&&y<o.y+o.h&&y+8>o.y;
+function mv(a,b){const nx=S.x+a,ny=S.y+b;if(nx<2||nx>468||ny<26||ny>310)return;if(OS().some(o=>'dipet'.includes(o.k)&&hit(nx,ny,o)))return;S.x=nx;S.y=ny}
+function go(a){S.map=a[0];S.x=a[1]*16;S.y=a[2]*16;adv(3);sfx(440,.1);cv.style.opacity=.2;setTimeout(()=>cv.style.opacity=1,120)}
+async function use(o){if(o.k=='e'){if(o.a[3]&&!opn(o.a[3]))return toast(o.n+'：現在不開放。');go(o.a)}else if(o.k=='p')await talk(o.a);else await A[o.a]()}
+async function restart(){if(busy)return;if(await ask('要重新開局嗎？今天的進度會消失。',['重新開始','繼續玩'])==0)location.reload()}
+function tick(dt){adv(dt/3);const k=c=>keys[c],dx=(k('ArrowRight')||k('KeyD')||T.r?1:0)-(k('ArrowLeft')||k('KeyA')||T.l?1:0),dy=(k('ArrowDown')||k('KeyS')||T.d?1:0)-(k('ArrowUp')||k('KeyW')||T.u?1:0);
+ if(dx||dy){const run=(k('ShiftLeft')||k('ShiftRight'))&&S.e>5,l=Math.hypot(dx,dy),sp=(run?135:75)*dt;if(run)ch('e',-dt*.6);mv(dx/l*sp,0);mv(0,dy/l*sp);S.fr+=dt*(run?20:14)}
+ wander(dt);chkEnd();if(S.over)return;
+ for(const c of S.tt){if(!c.sat&&!c.pen&&S.t>=c.e){c.pen=1;ch('a',-9);S.miss++}if(!c.w10&&S.t>=c.s-10&&S.t<c.s){c.w10=1;toast(`⏰ 快上課了：〈${c.n}〉${c.r}`)}}
+ if(S.ur&&S.t>S.ur){S.ur=0;ch('s',-25);ch('c',-15);ev.push(()=>say('','……來不及了。你的人生出現了一道不能言說的裂痕。'))}
+ if(S.map=='class'){const c=cur();if(c&&!c.done){klass(c);return}}
+ if(ev.length){ev.shift()();return}
+ if(S.t>=24*60&&S.e<20)return end('doze');if(S.t>=26*60)end('night')}
+let last=0;function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(S&&!S.over){if(S.go&&!busy)tick(dt);draw();hud()}requestAnimationFrame(loop)}
+/* ---------- 輸入 ---------- */
+onkeydown=e=>{keys[e.code]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+ if(cb){if(!cb.ch&&(e.key==' '||e.key=='Enter'||e.key=='e'))dlg.click();else if(cb.ch&&/[1-9]/.test(e.key)){const b=dlg.querySelector(`[data-i="${e.key-1}"]`);b&&b.click()}return}
+ if(kd)return kd(e);if(!S.go||busy)return;if('eE '.includes(e.key)){const o=near();o&&use(o)}if('tT'.includes(e.key))showTT();if('rR'.includes(e.key))restart()};
+onkeyup=e=>delete keys[e.code];
+$('#pd').innerHTML=[['u','▲','1/2'],['l','◀','2/1'],['r','▶','2/3'],['d','▼','3/2']].map(x=>`<button data-k=${x[0]} style="grid-area:${x[2]}">${x[1]}</button>`).join('');
+document.querySelectorAll('#pd button').forEach(b=>{b.onpointerdown=()=>T[b.dataset.k]=1;b.onpointerup=b.onpointerleave=()=>T[b.dataset.k]=0});
+$('#ab').onclick=()=>{if(S.go&&!busy){const o=near();o&&use(o)}};
+$('#bt').onclick=()=>S.go&&showTT();$('#bp').onclick=()=>S.go&&phone();$('#br').onclick=()=>S.go&&restart();
+/* ---------- 開始 ---------- */
+async function begin(){S.tt=mkTT();const k=await ask('【前一晚】明天好像有課。你拿起手機，要設鬧鐘嗎？',['設 6:30','設 7:30','設 8:30','不設，碰運氣']),al=[390,450,510][k];let w;
+ if(al){await say('','你設好鬧鐘，把手機扔到床頭。晚安。');w=al;if(R()<.15)w+=30+R()*150|0;else{await say('📱','鈴鈴鈴鈴鈴——');let up=0;while(!up){const c=await ask('鬧鐘在尖叫。',['爬起來','再睡一下']);if(c==1){w+=10+R()*25|0;if(R()<.3){w+=60+R()*120|0;await say('','……你睡得很沉。');up=1}}else{if(!await mash('起床！！',3,12,'爬起來'))w+=15;up=1}}}}
+ else{await say('','你決定相信明天的自己。晚安。');w=390+R()*330|0}
+ S.t=w;await say('',`……你睜開眼睛。手機螢幕顯示 ${clk()}。`);S.go=1;toast('方向鍵/WASD 移動 · Shift 奔跑 · E 互動 · T 課表 · R 重開')}
+S=init();requestAnimationFrame(loop);
+$('#sb').onclick=()=>{ov.style.display='none';sfx(660,.1);begin()};
+</script></body></html>
