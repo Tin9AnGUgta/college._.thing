@@ -31,17 +31,23 @@ h2,h3{margin:6px 0;color:#ff4fd8}
 .tg{position:absolute;width:36px;height:36px;border-radius:50%;background:radial-gradient(#fff 15%,#f44 17%,#f44 45%,#fff 47%,#f44 70%);cursor:crosshair}
 .tile{width:56px;height:72px;background:#fffde7;color:#b71c1c;border:3px solid #5d4037;font-size:20px;line-height:1.2}
 table{margin:8px auto;border-collapse:collapse}td,th{border:2px solid #fff;padding:3px 8px}
-#pd{display:none;position:absolute;left:6px;bottom:6px;grid-template:repeat(3,40px)/repeat(3,40px);z-index:3;opacity:.7}
-#pd button{padding:0;margin:0}
-#ab{display:none;position:absolute;right:10px;bottom:10px;width:64px;height:64px;border-radius:50%;z-index:3;opacity:.7;font-size:22px}
-@media(pointer:coarse){#pd{display:grid}#ab{display:block}}
+body,button,#ctl{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation}
+#ctl{display:none;justify-content:space-between;align-items:center;padding:12px 8px 6px;touch-action:none}
+#pd{display:grid;grid-template:repeat(3,54px)/repeat(3,54px);gap:3px}
+#pd button{padding:0;margin:0;font-size:22px}
+#rc{display:flex;gap:16px;align-items:center}
+#ab,#rn{width:78px;height:78px;border-radius:50%;font-size:26px;margin:0;padding:0}
+#rn{width:62px;height:62px;font-size:17px}
+@media(pointer:coarse){#ctl{display:flex}}
 </style></head><body>
 <div id="w">
 <div id="hud"><div id="hs"></div><div id="hb"><button id="bt">📅課表(T)</button><button id="bp">📱手機</button><button id="br">🔄重開(R)</button></div></div>
-<div id="stg"><canvas id="cv"></canvas><div id="ts"></div><div id="dlg"></div><div id="pd"></div><button id="ab">E</button>
+<div id="stg"><canvas id="cv"></canvas><div id="ts"></div><div id="dlg"></div>
 <div id="ov"><div class="box"><h2>大學生的一天</h2>
 <p>課表每次隨機。現實 3 秒 ＝ 遊戲 1 分鐘。<br>方向鍵 / WASD 移動 · Shift 奔跑（耗體力）· E 或空白鍵 互動 · T 課表 · R 重新開局<br>學業、精力、社交、SAN 值、飽食、水分、金錢都要顧——某些數值爆表或歸零，今天就會提早結束。<br>課還是要上。夜裡教室會鎖門，健身房、圖書館、宵夜店要騎車去。</p>
 <button id="sb">開始這一天</button></div></div></div>
+<div id="ctl"><div id="pd"></div><div id="rc"><button id="rn">跑</button><button id="ab">E</button></div></div>
 </div>
 <script>
 const $=s=>document.querySelector(s),R=Math.random,pk=a=>a[R()*a.length|0],cl=(v,a,b)=>Math.max(a,Math.min(b,v)),pad=n=>String(n|0).padStart(2,'0');
@@ -52,7 +58,7 @@ let S,busy=0,cb=null,kd=null,keys={},T={},AC,ev=[],tt_;
 function sfx(f,d=.08,ty='square',v=.04){try{AC=AC||new AudioContext();const o=AC.createOscillator(),a=AC.createGain();o.type=ty;o.frequency.value=f;a.gain.setValueAtTime(v,AC.currentTime);a.gain.exponentialRampToValueAtTime(.0001,AC.currentTime+d);o.connect(a);a.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
 const jg=a=>a.forEach((f,i)=>setTimeout(()=>sfx(f,.12),i*110));
 /* ---------- 狀態 ---------- */
-const init=()=>({t:0,map:'dorm',x:14*16,y:15*16,fr:0,a:50,e:90,c:45,s:70,m:600,f:60,w:60,nap:0,miss:0,mj:0,ph:0,gm:0,ur:0,urN:0,inv:0,inC:0,over:0,go:0,tt:[],q:0,qd:{},qn:0,crash:0,lib:0,gym:0,snk:0,ai:0,wz:0,fz:0});
+const init=()=>({t:0,map:'dorm',x:14*16,y:15*16,fr:0,a:50,e:90,c:45,s:70,m:600,f:60,w:60,nap:0,miss:0,mj:0,ph:0,gm:0,ur:0,urN:0,inv:0,inC:0,over:0,go:0,tt:[],q:0,qd:{},qn:0,crash:0,lib:0,gym:0,snk:0,ai:0,wz:0,fz:0,ow:0,ow1:0});
 const ch=(k,v)=>{k=='m'?S.m=Math.max(0,(S.m+v)|0):S[k]=cl(S[k]+v,0,100)};
 const clk=()=>pad(S.t/60%24)+':'+pad(S.t%60);
 const cur=()=>S.tt.find(c=>S.t>=c.s&&S.t<c.e);
@@ -91,24 +97,24 @@ ov.querySelectorAll('.fr').forEach(b=>b.onpointerdown=()=>{const s=+b.dataset.s,
 ov.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{CH[b.dataset.c].forEach((f,s)=>{if(f>=0)setTimeout(()=>pluck(fq(s,f)),s*70)});played+=3});
 $('#gs').onclick=()=>{tgt=0;mist=0;gi('跟著黃色格子彈：小星星');mark()};
 $('#gx').onclick=()=>{ov.style.display='none';busy--;r({ok,mist,n:played})}})}
-function hoopG(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>🏀 投籃：往後拖曳瞄準，放開出手（5 球）</h2><canvas id=hb width=480 height=270 style="width:100%;image-rendering:pixelated;touch-action:none"></canvas></div>';const cv2=$('#hb'),x=cv2.getContext('2d');x.font='14px DotGothic16,sans-serif';
-const HX=392,HY=100;let shots=0,made=0,bx,by,vx,vy,fl,dg,wt,pv,sc,msg='';
-const place=()=>{bx=40+R()*150;by=225;vx=vy=0;fl=0;dg=null;wt=0;sc=0;pv=by;msg=''};place();
+function hoopG(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>🏀 投籃：按住往左下拖曳，放開後球往右上飛（5 球）</h2><canvas id=hoopcv width=480 height=270 style="width:100%;image-rendering:pixelated;touch-action:none"></canvas></div>';const cv2=$('#hoopcv'),x=cv2.getContext('2d');x.font='14px DotGothic16,sans-serif';
+const HX=392,HY=100;let shots=0,made=0,bx,by,vx,vy,fl,dg,d0,wt,pv,sc,msg='';
+let ft=0;const place=()=>{ft=0;bx=40+R()*150;by=225;vx=vy=0;fl=0;dg=null;wt=0;sc=0;pv=by;msg=''};place();
 const pos=e=>{const b=cv2.getBoundingClientRect();return{x:(e.clientX-b.left)/b.width*480,y:(e.clientY-b.top)/b.height*270}};
-const vel=()=>{let a=(bx-dg.x)/7,b=(by-dg.y)/7;const m=Math.hypot(a,b);if(m>15){a*=15/m;b*=15/m}return[a,b,m]};
-cv2.onpointerdown=e=>{if(!fl)dg=pos(e)};cv2.onpointermove=e=>{if(dg)dg=pos(e)};
-cv2.onpointerup=()=>{if(dg&&!fl){const v=vel();dg=null;if(v[2]>1.5){vx=v[0];vy=v[1];fl=1;sfx(400,.08)}}};
+const vel=()=>{let a=(d0.x-dg.x)/6,b=(d0.y-dg.y)/6;const m=Math.hypot(a,b);if(m>16){a*=16/m;b*=16/m}return[a,b,m]};
+cv2.onpointerdown=e=>{if(fl)return;try{cv2.setPointerCapture(e.pointerId)}catch(_){}d0=pos(e);dg=d0};cv2.onpointermove=e=>{if(dg)dg=pos(e)};
+cv2.onpointerup=()=>{if(dg&&!fl){const v=vel();dg=null;if(v[2]>2){vx=v[0];vy=v[1];fl=1;shots++;sfx(400,.08)}}};
 const iv=setInterval(()=>{
  if(fl==1){pv=by;vy+=.3;bx+=vx;by+=vy;for(const px of [HX,HX+40]){const dx=bx-px,dy=by-HY,d=Math.hypot(dx,dy);if(d<8&&d>0){const nx=dx/d,ny=dy/d,dt=vx*nx+vy*ny;if(dt<0){vx=(vx-2*dt*nx)*.6;vy=(vy-2*dt*ny)*.6;sfx(200,.05)}}}
   if(bx>HX+46&&bx<HX+58&&by>HY-48&&by<HY+8){vx=-Math.abs(vx)*.5;bx=HX+45;sfx(250,.05)}
-  if(!sc&&pv<HY&&by>=HY&&bx>HX+2&&bx<HX+38&&vy>0){sc=1;made++;msg='入網！';jg([784,988])}
-  if(by>262||bx>500||bx<-20){fl=2;wt=30}}
- else if(fl==2&&--wt<=0){shots++;if(shots>=5){clearInterval(iv);ov.style.display='none';busy--;return r(made)}place()}
+  if(!sc&&pv<HY&&by>=HY&&bx>HX-1&&bx<HX+41&&vy>0){sc=1;made++;msg='入網！';jg([784,988])}
+  if(by>262||bx>500||bx<-20||++ft>420){fl=2;wt=45}}
+ else if(fl==2&&--wt<=0){if(shots>=5){clearInterval(iv);ov.style.display='none';busy--;return r(made)}place()}
  x.fillStyle='#81d4fa';x.fillRect(0,0,480,270);x.fillStyle='#c68642';x.fillRect(0,245,480,25);x.fillStyle='#fff';x.fillRect(0,245,480,2);
  x.fillStyle='#78909c';x.fillRect(HX+52,HY-48,5,200);x.fillStyle='#fff';x.fillRect(HX+46,HY-48,6,56);x.strokeStyle='#000';x.strokeRect(HX+46,HY-48,6,56);x.fillStyle='#ff6f00';x.fillRect(HX-2,HY-1,44,3);x.strokeStyle='#fff';for(let i=0;i<5;i++){x.beginPath();x.moveTo(HX+i*10,HY+2);x.lineTo(HX+6+i*7,HY+24);x.stroke()}
- if(dg&&!fl){const v=vel();let tx=bx,ty=by,tvx=v[0],tvy=v[1];x.fillStyle='#fff';for(let i=0;i<22;i++){tvy+=.3;tx+=tvx;ty+=tvy;if(i%2==0)x.fillRect(tx-1,ty-1,3,3)}}
+ if(dg&&!fl){const v=vel();x.strokeStyle='#ffeb3b';x.beginPath();x.moveTo(d0.x,d0.y);x.lineTo(dg.x,dg.y);x.stroke();let tx=bx,ty=by,tvx=v[0],tvy=v[1];x.fillStyle='#fff';for(let i=0;i<12;i++){tvy+=.3;tx+=tvx;ty+=tvy;if(i%3==0)x.fillRect(tx-1,ty-1,3,3)}}
  x.fillStyle='#e65100';x.beginPath();x.arc(bx,by,6,0,7);x.fill();x.strokeStyle='#000';x.lineWidth=1;x.beginPath();x.arc(bx,by,6,0,7);x.moveTo(bx-6,by);x.lineTo(bx+6,by);x.moveTo(bx,by-6);x.lineTo(bx,by+6);x.stroke();
- x.fillStyle='#000';x.textAlign='left';x.fillText(`第 ${Math.min(5,shots+1)}/5 球　進球 ${made}　${msg}`,8,16)},16)})}
+ x.fillStyle='#000';x.textAlign='left';x.fillText(`第 ${fl?shots:shots+1}/5 球　進球 ${made}　${msg}`,8,16)},16)})}
 const FV={n:'VALORANT（練槍場）',tip:'點擊射擊，爆頭一槍致命；按 R 換彈。敵人探頭時要搶先開槍！',am:13,rl:40,auto:0,dmg:25,sc:40,sd:45,sp:55,mx:2,t:30,mode:0,eh:2,life:100,ec:'#42a5f5'},FA={n:'APEX（亂戰）',tip:'按住滑鼠連射，槍口會往上跳；按 R 換彈。敵人會橫向移動。',am:30,rl:50,auto:1,dmg:8,sc:45,sd:60,sp:70,mx:3,t:30,mode:1,eh:3,life:260,ec:'#ef5350'};
 function fps(cf){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><h2>${cf.n}</h2><canvas id=fc2 width=480 height=270 style="width:100%;image-rendering:pixelated;cursor:crosshair;touch-action:none"></canvas><p>${cf.tip}</p></div>`;
 const cv2=$('#fc2'),x=cv2.getContext('2d');x.font='13px DotGothic16,sans-serif';let mx=240,my=135,dn=0,fr=0,hp=100,kills=0,ammo=cf.am,rl=0,en=[],fl=0,rec=0,dm=0;
@@ -173,7 +179,7 @@ ov.style.display='flex';ov.innerHTML=`<div class=box><h2>📅 今日課表</h2><
 const O=a=>({x:a[0]*16,y:a[1]*16,w:a[2]*16,h:a[3]*16,c:a[4],n:a[5],k:a[6],a:a[7],ph:a[8]});
 const P_=(x,y,id,ph)=>[x,y,1,1,'','','p',id,ph],TR=(x,y)=>[x,y,2,2,'','','t'],BK=(x,y,w)=>[x,y,w,2,'#5d4037','書架','d'],BIKE=(x,y)=>[x,y,3,2,'#78909c','腳踏車','i','bike'],WT=(x,y)=>[x,y,2,3,'#cfd8dc','飲水機','i','water'],TB=(x,y)=>[x,y,4,2,'#a1887f','','d'];
 const M={
-dorm:{f1:'#7a5c43',f2:'#70533c',w:'#3b2a4a',win:[3,19],dt:'#8a6b50',o:[[10,10,8,5,'#e57373','','f'],[11,11,6,3,'#ef9a9a','','f'],
+dorm:{f1:'#7a5c43',f2:'#70533c',w:'#3b2a4a',win:[3,19],dt:'#8a6b50',o:[[10,10,8,5,'#e57373','','r'],[11,11,6,3,'#ef9a9a','','r'],
 [2,3,6,4,'#5c6bc0','床','i','bed'],[2,3,6,1,'#e8eaf6','','d'],[8,3,1,1,'#ffd54f','鐘','d'],[21,3,6,3,'#455a64','電腦','i','pc'],[9,2,2,2,'#b0bec5','鏡子','i','mirror'],[12,2,3,2,'#8d6e63','衣櫃','i','closet'],[17,2,2,3,'#cfd8dc','冰箱','i','fridge'],
 [24,13,4,5,'#80cbc4','廁所','i','wc'],[2,12,3,3,'#6d4c41','書桌','i','study'],[20,8,3,2,'#a1887f','吉他','i','guitar'],[20,13,3,3,'#eceff1','洗衣機','i','wash'],WT(27,8),[13,18,4,2,'#ffb74d','出門','e',['street',4,6]]]},
 street:{f1:'#6b7b8c',f2:'#64748a',dt:'#7d8da0',o:[[0,8,30,4,'#37474f','','f'],...Array.from({length:8},(_,i)=>[i*4+1,9.8,2,.3,'#fff59d','','f']),
@@ -181,7 +187,7 @@ street:{f1:'#6b7b8c',f2:'#64748a',dt:'#7d8da0',o:[[0,8,30,4,'#37474f','','f'],..
 [2,13,6,4,'#43a047','便利商店','e',['cvsm',14,16,[0,24]]],[20,13,7,5,'#8e24aa','麻將館','e',['mj',14,16]],BIKE(14,13),P_(10,15,'amway','d'),P_(17,16,'cat'),P_(6,10,'rider','n'),P_(22,10,'dog','n'),TR(9,13),TR(28,13),[10,6,1,2,'#fdd835','路燈','d'],[18,6,1,2,'#fdd835','路燈','d']]},
 campus:{f1:'#4caf50',f2:'#459f49',dt:'#66bb6a',o:[[13,6,4,12,'#d7ccc8','','f'],[2,10,26,3,'#d7ccc8','','f'],
 [3,2,8,4,'#90a4ae','教學大樓','e',['class',7,6,[6,18.5]]],[19,2,8,4,'#ffa726','學餐','e',['caf',22,6,[7,20]]],[12,18,6,2,'#c62828','往校外','e',['street',14,7]],[26,14,3,3,'#80cbc4','廁所','i','wc'],
-[6,14,3,3,'#4fc3f7','噴水池','i','fount'],[11,15,3,1,'#8d6e63','長椅','i','bench'],[10,7,2,1,'#fff59d','公佈欄','i','board'],[24,7,1,2,'#e53935','販賣機','i','vend'],[19,13,5,4,'#c68642','籃球場','i','hoop'],[4,7,3,2,'#ffcc80','社團攤位','i','stand'],BIKE(17,7),
+[6,14,3,3,'#4fc3f7','噴水池','i','fount'],[9,13,3,1,'#8d6e63','長椅','i','bench'],[12,13,1,2,'#fdd835','路燈','d'],[10,7,2,1,'#fff59d','公佈欄','i','board'],[24,7,1,2,'#e53935','販賣機','i','vend'],[19,13,5,4,'#c68642','籃球場','i','hoop'],[4,7,3,2,'#ffcc80','社團攤位','i','stand'],BIKE(17,7),
 P_(8,11,'juan','d'),P_(18,11,'friend','d'),P_(22,9,'senior','d'),P_(13,8,'prof','d'),P_(15,16,'mj','d'),P_(8,11,'jog','n'),P_(14,9,'guard','n'),P_(22,9,'owl','n'),TR(1,14),TR(27,11),TR(10,17),TR(24,17)]},
 class:{f1:'#c5b08f',f2:'#bda684',w:'#6d4c41',win:[2,25],dt:'#cdbb9c',o:[[6,2,18,1,'#2e7d32','黑板','d'],[12,3,6,2,'#8d6e63','講台','d'],
 ...[7,9,11,13].flatMap(y=>[3,9,15,21].map(x=>[x,y,3,1,'#a1887f','','d'])),[3,15,3,1,'#c9a27a','你的座位','i','seat'],P_(8,5,'juan'),[13,18,4,2,'#ffb74d','走廊','e',['campus',7,6]]]},
@@ -235,7 +241,7 @@ async function talk(id){const d=D[id],q=S.q;if(q&&q.to==id&&q.have){await say(d.
  for(const l of pk(d.v))await say(d.n,l);
  if(Q[id]&&!S.q&&!S.qd[id]&&R()<.7){const t=Q[id];if(await ask(t.off,['沒問題','我現在沒空'],d.n)==0){S.q={...t,from:id,have:t.get=='direct'?1:0};await say('','【任務】'+t.txt)}}else if(d.f)await d.f()}
 /* ---------- 互動物件 ---------- */
-const eat=(f,w)=>{ch('f',f);ch('w',w||0)};
+const eat=(f,w)=>{ch('f',f);w=w||0;if(w>0){const over=S.w+w-100;if(over>0||S.w>=90)S.ow+=Math.max(0,over)*1.5+(S.w>=90?10:0);if(S.w>=95)toast('你覺得肚子脹脹的。')}ch('w',w)};
 async function nap(d){await fp('bed','你閉上眼睛……');S.nap+=d;ch('e',d/60*9);ch('s',4);adv(d);await say('',`……你醒了。手機螢幕顯示 ${clk()}。`)}
 const A={
 bed:async()=>{if(S.t<17*60){if(await ask('要小睡一下嗎？',['躺下去','算了'])==0)await nap(60+R()*150|0)}else{const k=await ask('這張床看起來很舒服。',['睡覺','小睡一下','再撐一下']);if(k==0)return end(dayEnd());if(k==1)await nap(60+R()*150|0)}},
@@ -305,7 +311,7 @@ async()=>{if(!night()||!OUT())return;await say('','背後傳來急促的腳步�
 async()=>{await say('📱','學姊：「考古題更新了，需要的話跟我說。」')},
 async()=>{if(S.map=='dorm')return;await say('📱','手機只剩 5% 的電了。');ch('s',-3)},
 async()=>{await say('📱','校園廣播：「請遺失一隻左腳拖鞋的同學，前往學務處。」');ch('s',2)}];
-function hr(h){ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
+function hr(h){S.ow=Math.max(0,S.ow-5);ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
  if(h==12)toast('中午了。學餐那邊開始排隊了。');if(h==24)toast('已經午夜了……');if(S.f<25&&R()<.6)toast('你的肚子發出了不祥的叫聲。');if(S.w<25&&R()<.6)toast('喉嚨乾得快冒煙了。');if(R()<.3)ev.push(pk(EV))}
 function adv(m){const o=S.t;S.t+=m;for(let h=Math.floor(o/60)+1;h<=Math.floor(S.t/60);h++)hr(h)}
 /* ---------- 上課 ---------- */
@@ -353,17 +359,70 @@ async function klass(c){S.inC=1;c.done=1;const late=S.t-c.s;await fp('class',lat
 async function roll(){await say('教授','「來，點名。我念到名字的請舉手。」');if(R()<.55){if(await ask('隔壁同學小聲說：「幫我喊個到，拜託。」',['幫他喊到','裝沒聽到'])==0){if(await timing('趁教授轉身……')){ch('c',8);ch('s',3);await say('','成功蒙混過關。')}else{ch('c',-6);ch('a',-3);ch('s',-5);await say('教授','「剛剛是誰在講話？」')}}else ch('c',-3)}else{ch('a',1);await say('教授','「很好，全員到齊。」')}}
 /* ---------- 結局 ---------- */
 const E={expel:['被二一退學','學務處的信比鬧鐘還準時。你說：「可是我才玩了一天欸？」'],faint:['過勞昏倒','你倒下的那一刻，腦中浮現的是：「我的作業還沒交。」'],mad:['精神崩潰・出家','你看破紅塵，剃度出家。法號：已讀不回。'],soc:['社交達人','全校都認識你，連學校的貓都叫你學長。'],geek:['卷王附體','你已經不是人了，你是一台行走的筆記本。'],zen:['大徹大悟','San 值爆表。你看透了學分、考試與人生，微笑著走進夕陽。'],oh:['歐皇降臨','麻將桌上的神降臨在你身上。老闆娘偷偷把你的照片貼在牆上。'],sleep:['睡覺大師','你整天幾乎都在睡，而且睡得理直氣壯。'],lie:['躺平大師','一堂課都沒去，卻活得很安詳。教授：「你是哪位？」'],night:['熬夜修仙成功','天亮了，你還沒睡。修仙成功，只是明天的你要付帳。'],star:['模範大學生','全勤、認真、不翹課。你是教授心中的理想型，也是同學心中的捲王候補。'],gamer:['電競魂','你沒有上場比賽，但你的魂已經在戰場上了。'],phone:['低頭族代表','你的拇指今天跑了半個馬拉松。'],broke:['月底吃土','錢包空空如也，你開始研究免費試吃的時間表。'],pop:['人氣王','今天到處都有人跟你打招呼，你的手機通知多到變成一種噪音。'],norm:['平凡順利的一天','沒有大風大浪。就是平凡地、有點累地，過完了這一天。'],
-dehyd:['脫水送醫','你一整天只顧著做事，忘了喝水。救護車上，護理師說：「同學，水很便宜。」'],starve:['營養不良昏倒','你整天沒好好吃東西，終於在路邊坐了下來。路人問你：「需要幫忙嗎？」你說：「我想吃雞腿。」'],crash:['車禍進急診','你今天撞了太多次。腳踏車說：「我不幹了。」你在急診室被問：「你是怎麼騎的？」'],doze:['睡死在原地','過了午夜，你的身體先替你做了決定。你倒在原地呼呼大睡，明天的你會處理。'],dang:['被當邊緣','缺課太多，教授的點名簿上寫滿了你的名字。你說：「我只是……沒有去。」'],muscle:['健身魂','你今天把一半的人生花在健身房，剩下的一半拿來喘氣。肌肉在對你點頭。'],lib:['圖書館幽靈','你整天待在圖書館。管理員說：「你是我們這裡新來的書。」'],snackk:['宵夜成癮者','你今天的第三餐是宵夜，第四餐也是。胃：「我們談談。」'],brain:['腦袋被 AI 洗乾淨','你看了太多 AI 生成的影片，現在腦中只剩下「鯊魚穿球鞋」。'],quest:['跑腿王','全勤之外，你還接了一堆 NPC 的任務。你是這所學校的萬事通。']};
+wtox:['水中毒','你喝水喝到停不下來，身體裡的鈉被稀釋得一乾二淨。護理師說：「喝水是好事，但不是這樣喝。」'],dehyd:['脫水送醫','你一整天只顧著做事，忘了喝水。救護車上，護理師說：「同學，水很便宜。」'],starve:['營養不良昏倒','你整天沒好好吃東西，終於在路邊坐了下來。路人問你：「需要幫忙嗎？」你說：「我想吃雞腿。」'],crash:['車禍進急診','你今天撞了太多次。腳踏車說：「我不幹了。」你在急診室被問：「你是怎麼騎的？」'],doze:['睡死在原地','過了午夜，你的身體先替你做了決定。你倒在原地呼呼大睡，明天的你會處理。'],dang:['被當邊緣','缺課太多，教授的點名簿上寫滿了你的名字。你說：「我只是……沒有去。」'],muscle:['健身魂','你今天把一半的人生花在健身房，剩下的一半拿來喘氣。肌肉在對你點頭。'],lib:['圖書館幽靈','你整天待在圖書館。管理員說：「你是我們這裡新來的書。」'],snackk:['宵夜成癮者','你今天的第三餐是宵夜，第四餐也是。胃：「我們談談。」'],brain:['腦袋被 AI 洗乾淨','你看了太多 AI 生成的影片，現在腦中只剩下「鯊魚穿球鞋」。'],quest:['跑腿王','全勤之外，你還接了一堆 NPC 的任務。你是這所學校的萬事通。']};
 function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(!a)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(a==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
-const DEATHS=['expel','faint','mad','dehyd','starve','crash'];
+const DEATHS=['expel','faint','mad','dehyd','starve','crash','wtox'];
 function deathFx(k){S.over=1;let f=0;sfx(200,.4,'sawtooth',.06);const iv=setInterval(()=>{f++;S.fall=f;draw();g.setTransform(3,0,0,3,0,0);g.fillStyle=`rgba(180,0,0,${Math.min(.55,f/60)})`;g.fillRect(0,0,480,320);const rad=Math.max(0,260-f*3.4),gr=g.createRadialGradient(S.x+5,S.y,rad*.2,S.x+5,S.y,rad+30);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');g.fillStyle=gr;g.fillRect(0,0,480,320);if(f>15)txt('💀 你倒下了……',240,150,18,'#fff');if(f%12==0)sfx(180,.3,'sawtooth',.05);if(f>=80){clearInterval(iv);S.fall=0;S.dd=1;end(k)}},33)}
 function end(k){if(DEATHS.includes(k)&&!S.dd){deathFx(k);return}S.over=1;busy=0;const e=E[k],gr=S.a>=80?'A':S.a>=65?'B':S.a>=50?'C':S.a>=30?'D':'F';ov.style.display='flex';dlg.style.display='none';
  ov.innerHTML=`<div class=box><h3>📜 今日成績單</h3><h2>${e[0]}</h2><p>${e[1]}</p><table><tr><td>學業評等</td><td>${gr}</td><td>出席</td><td>${S.tt.filter(c=>c.sat).length}/${S.tt.length}</td></tr><tr><td>社交</td><td>${S.c|0}</td><td>SAN 值</td><td>${S.s|0}</td></tr><tr><td>小睡</td><td>${(S.nap/60).toFixed(1)}h</td><td>麻將</td><td>${S.mj>=0?'+':''}${S.mj}</td></tr><tr><td>存款</td><td>$${S.m}</td><td>滑手機</td><td>${S.ph} 次</td></tr><tr><td>完成任務</td><td>${S.qn}</td><td>運動／讀書</td><td>${S.gym}／${S.lib}</td></tr></table><p>截圖分享你的結局吧！</p><button onclick="location.reload()">再活一天</button></div>`;jg([523,659,784,1047])}
-function chkEnd(){if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.s>=100)end('zen');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve')}
+function chkEnd(){if(S.ow>=30&&!S.ow1){S.ow1=1;ch('e',-8);ch('s',-8);toast('你覺得頭暈、反胃……水好像喝太多了。')}if(S.ow<10)S.ow1=0;if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.s>=100)end('zen');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve');else if(S.ow>=70)end('wtox')}
 /* ---------- 繪製 ---------- */
 const txt=(s,x,y,z,c)=>{g.font=`${z}px DotGothic16,'Noto Sans TC',sans-serif`;g.textAlign='center';g.lineWidth=2.5;g.strokeStyle='#000';g.strokeText(s,x,y);g.fillStyle=c;g.fillText(s,x,y)};
 function man(x,y,c,fr){const b=Math.sin(fr)>0?1:0;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,10,3);g.fillStyle='#37474f';g.fillRect(x+2,y+11+b,3,4-b);g.fillRect(x+7,y+12-b,3,3+b);g.fillStyle=c;g.fillRect(x+1,y+5,10,7);g.fillStyle='#ffcc99';g.fillRect(x+2,y,8,6);g.fillStyle='#3e2723';g.fillRect(x+2,y,8,2);g.fillStyle='#000';g.fillRect(x+4,y+3,1,1);g.fillRect(x+7,y+3,1,1)}
 function pet(x,y,c,fr,dog){const b=Math.sin(fr)>0?1:0,dk=dog?'#6d4c41':c;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,15,3);g.fillStyle=c;g.fillRect(x+2,y+7,11,6);g.fillRect(x+10,y+3,6,6);g.fillRect(x+10,y+(dog?1:0),2,3);g.fillRect(x+14,y+(dog?1:0),2,3);g.fillStyle=dk;g.fillRect(x+3,y+12,2,3+b);g.fillRect(x+10,y+12,2,4-b);g.fillRect(dog?x:x-1,dog?y+6:y+2,3,dog?3:5);g.fillStyle='#000';g.fillRect(x+12,y+5,1,1);g.fillRect(x+14,y+5,1,1);g.fillStyle='#ff80ab';g.fillRect(x+16,y+7,1,1)}
+const ell=(x,y,rx,ry,c)=>{g.fillStyle=c;g.beginPath();g.ellipse(x,y,rx,ry,0,0,7);g.fill()};
+const rr=(x,y,w,h,r,c)=>{g.fillStyle=c;g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else g.rect(x,y,w,h);g.fill()};
+const ln=(a,b,c,d,col,w)=>{g.strokeStyle=col;g.lineWidth=w||1;g.beginPath();g.moveTo(a,b);g.lineTo(c,d);g.stroke()};
+const fr=(c,x,y,w,h)=>{g.fillStyle=c;g.fillRect(x,y,w,h)};
+const shd=(x,y,w,h)=>ell(x+w/2,y+h-1,w/2,3,'rgba(0,0,0,.25)');
+const S_=f=>o=>f(o.x,o.y,o.w,o.h,o);
+const CT=(top,front)=>S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+4,w,h-4,3,front);rr(x,y,w,8,3,top);ln(x+4,y+h-6,x+w-4,y+h-6,'rgba(0,0,0,.15)',1)});
+const TBL=S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+2,w,h-8,3,'#a1887f');rr(x,y+2,w,3,3,'#bcaaa4');fr('#6d4c41',x+3,y+h-7,3,6);fr('#6d4c41',x+w-6,y+h-7,3,6);if(h>=30){ell(x+10,y+h-3,6,3,'#5d4037');ell(x+w-10,y+h-3,6,3,'#5d4037')}});
+const DOOR=S_((x,y,w,h)=>{rr(x+w/2-13,y,26,h,2,'#5d4037');rr(x+w/2-10,y+2,20,h-2,1,'#ffb74d');fr('#90caf9',x+w/2-6,y+6,12,10);ell(x+w/2+6,y+h/2+4,1.5,1.5,'#ffd54f');fr('#8d6e63',x+w/2-14,y+h-3,28,3)});
+const BK_=S_((x,y,w,h)=>{rr(x,y,w,h,2,'#5d4037');for(let r=0;r<2;r++){fr('#3e2723',x+2,y+r*16+14,w-4,2);for(let i=0;i<14;i++){const hh=9+((i*7+r*3)%5);fr(['#e53935','#1e88e5','#fdd835','#43a047','#8e24aa','#ff7043'][(i+r)%6],x+3+i*(w-6)/14,y+r*16+14-hh,4,hh)}}});
+const SH={
+'床':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+4,w,h-4,6,'#6d4c41');rr(x,y,w,12,4,'#4e342e');rr(x+4,y+12,w-8,h-18,5,'#e8eaf6');rr(x+4,y+30,w-8,h-36,5,'#5c6bc0');rr(x+4,y+28,w-8,6,3,'#9fa8da');ell(x+26,y+20,14,7,'#fff');ell(x+w-26,y+20,14,7,'#fff')}),
+'電腦':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+18,w,h-18,3,'#8d6e63');rr(x,y+18,w,6,3,'#a1887f');fr('#4e342e',x+4,y+h-6,4,6);fr('#4e342e',x+w-8,y+h-6,4,6);const c=x+w/2;rr(c-3,y+14,6,6,1,'#455a64');rr(c-12,y+18,24,3,1,'#455a64');rr(c-24,y-2,48,30,3,'#263238');rr(c-21,y+1,42,22,2,'#4fc3f7');ln(c-17,y+7,c+5,y+7,'#fff',2);ln(c-17,y+12,c+12,y+12,'#e1f5fe',2);rr(c-18,y+31,36,8,2,'#cfd8dc');for(let i=0;i<8;i++)fr('#78909c',c-16+i*4,y+33,2,4);ell(c+28,y+35,4,5,'#eceff1');rr(x+w-22,y+2,14,34,2,'#37474f');fr('#4caf50',x+w-18,y+6,3,3);ell(x+10,y+32,4,4,'#fff');ell(c,y+h,16,5,'#37474f')}),
+'鏡子':S_((x,y,w,h)=>{ell(x+w/2,y+h/2,w/2-1,h/2-1,'#8d6e63');ell(x+w/2,y+h/2,w/2-4,h/2-4,'#cfe8f5');ln(x+9,y+9,x+14,y+6,'#fff',2)}),
+'衣櫃':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,h-3,2,'#8d6e63');rr(x+2,y+2,w/2-3,h-8,1,'#a1887f');rr(x+w/2+1,y+2,w/2-3,h-8,1,'#a1887f');fr('#ffd54f',x+w/2-5,y+h/2-2,2,5);fr('#ffd54f',x+w/2+3,y+h/2-2,2,5);fr('#5d4037',x+3,y+h-3,4,3);fr('#5d4037',x+w-7,y+h-3,4,3)}),
+'冰箱':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,h-2,4,'#eceff1');ln(x+1,y+18,x+w-1,y+18,'#90a4ae',2);fr('#78909c',x+w-7,y+6,2,9);fr('#78909c',x+w-7,y+24,2,14);fr('#ef5350',x+5,y+8,4,4);fr('#42a5f5',x+10,y+24,5,5)}),
+'廁所':S_((x,y,w,h)=>{if(w>=64){for(let i=0;i<w;i+=8)for(let j=0;j<h;j+=8)fr((i+j)/8%2?'#b2dfdb':'#a5d6d0',x+i,y+j,8,8);rr(x+w/2-13,y+8,26,13,3,'#fff');ell(x+w/2,y+36,14,17,'#fff');ell(x+w/2,y+37,9,12,'#cfd8dc');ell(x+11,y+h-16,10,8,'#fff');fr('#90a4ae',x+10,y+h-26,2,6)}else{rr(x,y+8,w,h-8,3,'#80cbc4');rr(x-2,y+4,w+4,8,2,'#00897b');fr('#fff',x+6,y+16,14,10);ell(x+13,y+21,5,5,'#00897b');fr('#3e2723',x+w/2-6,y+h-18,12,18);fr('#fff',x+w-14,y+16,8,10)}}),
+'書桌':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+10,w,h-10,3,'#8d6e63');rr(x,y+10,w,5,3,'#a1887f');fr('#fff',x+8,y+16,14,10);fr('#e53935',x+26,y+14,10,5);fr('#1e88e5',x+27,y+19,9,5);ln(x+w-8,y+14,x+w-12,y+2,'#37474f',2);ell(x+w-12,y+3,6,3,'#ffd54f');ell(x+w/2,y+h-3,12,5,'#455a64')}),
+'吉他':S_((x,y,w,h)=>{ln(x+w/2-10,y+h,x+w/2,y+h-8,'#555',2);ln(x+w/2+10,y+h,x+w/2,y+h-8,'#555',2);g.save();g.translate(x+w/2,y+h/2+2);g.rotate(-.75);ell(0,7,9,8,'#c68642');ell(0,-3,6,5,'#c68642');ell(0,5,3,3,'#3e2723');fr('#5d4037',-1.5,-24,3,18);fr('#3e2723',-3,-29,6,6);ln(0,-24,0,10,'#eee',.5);g.restore()}),
+'洗衣機':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+2,y+2,w-4,h-2,4,'#eceff1');rr(x+2,y+2,w-4,10,3,'#cfd8dc');ell(x+10,y+7,2.5,2.5,'#f44');ell(x+18,y+7,2.5,2.5,'#42a5f5');ell(x+w/2,y+h/2+6,14,14,'#78909c');ell(x+w/2,y+h/2+6,10,10,'#4fc3f7');ln(x+w/2-5,y+h/2+1,x+w/2-1,y+h/2-1,'#fff',2)}),
+'飲水機':S_((x,y,w,h)=>{shd(x,y,w,h);ell(x+w/2,y+11,9,11,'#81d4fa');rr(x+4,y+20,w-8,h-22,3,'#cfd8dc');fr('#ef5350',x+9,y+26,4,4);fr('#42a5f5',x+w-13,y+26,4,4);fr('#90a4ae',x+8,y+h-10,w-16,3)}),
+'鐘':S_((x,y)=>{ell(x+8,y+8,7,7,'#ffd54f');ln(x+8,y+8,x+8,y+3,'#000');ln(x+8,y+8,x+11,y+9,'#000')}),
+'麻將桌':S_((x,y,w,h)=>{shd(x,y,w,h);[[w/2,5],[w/2,h-5]].forEach(p=>ell(x+p[0],y+p[1],10,4,'#5d4037'));[[5,h/2],[w-5,h/2]].forEach(p=>ell(x+p[0],y+p[1],4,10,'#5d4037'));rr(x+10,y+10,w-20,h-20,6,'#6d4c41');rr(x+14,y+14,w-28,h-28,4,'#2e7d32');for(let i=0;i<7;i++){fr('#fffde7',x+20+i*6,y+17,5,6);fr('#fffde7',x+20+i*6,y+h-23,5,6);fr('#fffde7',x+17,y+22+i*5,6,4);fr('#fffde7',x+w-23,y+22+i*5,6,4)}ell(x+w/2,y+h/2,4,4,'#fff');fr('#d32f2f',x+w/2-1,y+h/2-1,2,2)}),
+'籃球場':S_((x,y,w,h)=>{rr(x,y,w,h,3,'#d9a45e');fr('#b3402e',x+w/2-14,y+3,28,26);g.strokeStyle='#fff';g.lineWidth=1;g.strokeRect(x+1.5,y+1.5,w-3,h-3);g.strokeRect(x+w/2-14,y+3,28,26);g.beginPath();g.arc(x+w/2,y+29,10,0,Math.PI);g.stroke();g.beginPath();g.arc(x+w/2,y+8,32,.35,Math.PI-.35);g.stroke();g.beginPath();g.arc(x+w/2,y+h,8,Math.PI,0);g.stroke();fr('#fff',x+w/2-9,y+4,18,2);ell(x+w/2,y+11,5,2,'#e65100');ln(x+w/2,y+2,x+w/2,y-8,'#78909c',2)}),
+'長椅':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,4,2,'#a1887f');rr(x,y+5,w,3,2,'#a1887f');rr(x,y+9,w,3,2,'#8d6e63');fr('#4e342e',x+4,y+12,3,4);fr('#4e342e',x+w-7,y+12,3,4);fr('#4e342e',x+3,y,2,12);fr('#4e342e',x+w-5,y,2,12)}),
+'噴水池':S_((x,y,w,h)=>{const cx=x+w/2,cy=y+h/2+3;ell(cx,cy+2,w/2,h/2-2,'#90a4ae');ell(cx,cy,w/2-2,h/2-4,'#b0bec5');ell(cx,cy,w/2-6,h/2-8,'#4fc3f7');ell(cx,cy-2,8,4,'#cfd8dc');fr('#b0bec5',cx-2,cy-14,4,12);ell(cx,cy-16,6,3,'#cfd8dc');ln(cx,cy-16,cx,cy-24,'#e1f5fe',2);ln(cx,cy-24,cx-6,cy-12,'#e1f5fe',1);ln(cx,cy-24,cx+6,cy-12,'#e1f5fe',1);g.strokeStyle='#fff';g.lineWidth=1;g.beginPath();g.ellipse(cx,cy+4,12,5,0,0,7);g.stroke()}),
+'販賣機':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,h-1,2,'#e53935');rr(x+2,y+3,w-4,15,1,'#263238');for(let i=0;i<3;i++)for(let j=0;j<2;j++)fr(['#ffeb3b','#4fc3f7','#66bb6a'][i],x+3+j*5,y+5+i*5,3,3);fr('#bdbdbd',x+3,y+h-8,w-6,5);fr('#fff',x+w-5,y+20,2,2)}),
+'公佈欄':S_((x,y,w,h)=>{rr(x,y,w,h,2,'#8d6e63');rr(x+2,y+2,w-4,h-4,1,'#d7a86e');fr('#fff',x+4,y+4,7,8);fr('#f48fb1',x+13,y+5,6,7);fr('#81d4fa',x+21,y+4,7,6);fr('#e53935',x+7,y+3,2,2);fr('#e53935',x+15,y+4,2,2)}),
+'跑步機':S_((x,y,w,h)=>{shd(x,y,w,h);g.fillStyle='#212121';g.beginPath();g.moveTo(x+4,y+h-12);g.lineTo(x+w-6,y+h-22);g.lineTo(x+w-6,y+h-14);g.lineTo(x+4,y+h-4);g.fill();fr('#616161',x+6,y+h-8,w-12,3);ln(x+w-8,y+h-20,x+w-14,y+12,'#90a4ae',3);rr(x+w-26,y+4,20,12,2,'#263238');rr(x+w-24,y+6,16,6,1,'#4fc3f7');ln(x+w-20,y+14,x+w-8,y+14,'#90a4ae',2)}),
+'臥推架':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+14,y+24,w-28,9,4,'#212121');fr('#424242',x+22,y+32,4,12);fr('#424242',x+w-26,y+32,4,12);fr('#757575',x+12,y+4,4,30);fr('#757575',x+w-16,y+4,4,30);ln(x+2,y+8,x+w-2,y+8,'#bdbdbd',3);[x+3,x+8,x+w-8,x+w-13].forEach(p=>rr(p,y+1,4,16,1,'#b71c1c'))}),
+'沙包':S_((x,y,w,h)=>{ln(x+16,y,x+16,y+8,'#999',1);rr(x+6,y+8,20,h-12,8,'#8d3a1c');ln(x+10,y+12,x+10,y+h-8,'#b5603a',2);rr(x+6,y+(h*.5|0),20,3,1,'#5d4037')}),
+'體重計':S_((x,y)=>{rr(x+3,y+8,26,20,6,'#eceff1');rr(x+11,y+12,10,5,1,'#222');fr('#b0bec5',x+8,y+21,6,4);fr('#b0bec5',x+18,y+21,6,4)}),
+'影印機':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+6,w,h-6,3,'#cfd8dc');rr(x,y,w,8,2,'#90a4ae');rr(x+4,y+12,10,5,1,'#4fc3f7');fr('#fff',x+w-12,y+h-6,10,4)}),
+'娃娃機':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+2,y+2,w-4,h-2,4,'#f06292');rr(x+6,y+6,w-12,h-24,2,'#b3e5fc');[['#ffeb3b',10],['#fff',17],['#a5d6a7',24],['#ce93d8',31]].forEach(p=>ell(x+p[1],y+h-21,4,4,p[0]));ln(x+w/2,y+6,x+w/2,y+14,'#333',1);ln(x+w/2-4,y+17,x+w/2+4,y+17,'#333',2);rr(x+6,y+h-14,w-12,9,2,'#ad1457');ell(x+14,y+h-9,2,2,'#ffeb3b');ell(x+w-14,y+h-9,2,2,'#4fc3f7')}),
+'路邊攤':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+2,y+22,w-4,20,3,'#8d6e63');for(let i=0;i<w;i+=8){fr(i/8%2?'#fff':'#e53935',x+i,y+6,8,10);ell(x+i+4,y+16,4,3,i/8%2?'#fff':'#e53935')}ln(x+2,y+6,x+w-2,y+6,'#b71c1c',2);ell(x+w/2,y+24,8,3,'#ffcc80');ell(x+8,y+h-3,5,5,'#212121');ell(x+w-8,y+h-3,5,5,'#212121')}),
+'餐檯（點餐）':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+6,w,h-6,3,'#8d6e63');rr(x,y+4,w,6,3,'#a1887f');for(let i=0;i<7;i++){rr(x+8+i*44,y+7,36,12,2,'#cfd8dc');ell(x+26+i*44,y+11,13,4,['#ef6c00','#8bc34a','#795548','#ffca28','#e53935','#ffb74d','#aed581'][i])}}),
+'宵夜攤':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+14,w,h-14,3,'#6d4c41');rr(x,y+12,w,5,2,'#8d6e63');for(let i=0;i<w;i+=12){fr(i/12%2?'#fff':'#ff8f00',x+i,y,12,8);ell(x+i+6,y+8,6,4,i/12%2?'#fff':'#ff8f00')}for(let i=0;i<5;i++){rr(x+8+i*36,y+18,28,12,2,'#cfd8dc');ell(x+22+i*36,y+21,10,4,['#ffca28','#bf360c','#795548','#8bc34a','#ffb74d'][i])}}),
+'櫃台':CT('#a1887f','#6d4c41'),'點單櫃台':CT('#f8bbd0','#8d6e63'),
+'收銀台':o=>{CT('#a1887f','#6d4c41')(o);rr(o.x+6,o.y-4,14,10,2,'#263238');fr('#4caf50',o.x+8,o.y-2,10,4)},
+'冷藏櫃':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,h,3,'#80cbc4');for(let i=0;i<4;i++){rr(x+3+i*31,y+3,28,h-6,2,'#b2ebf2');for(let j=0;j<4;j++)fr(['#ff8a65','#4fc3f7','#aed581','#fff176'][(i+j)%4],x+6+i*31+j*6,y+7,4,h-14)}}),
+'零食架':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,h,2,'#ffb300');fr('#e65100',x+2,y+15,w-4,2);for(let i=0;i<9;i++){fr(['#e53935','#fdd835','#43a047','#1e88e5'][i%4],x+4+i*10,y+4+(i%3)*2,7,10);fr(['#8e24aa','#ff7043','#26c6da'][i%3],x+4+i*10,y+19,7,9)}}),
+'關東煮':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y+6,w,h-6,3,'#ef6c00');ell(x+w/2,y+14,w/2-6,7,'#fff8e1');ell(x+w/2,y+14,w/2-10,4,'#d7a86e');for(let i=0;i<5;i++)ln(x+20+i*10,y+8,x+22+i*10,y+16,'#8d6e63',1)}),
+'菜單':S_((x,y,w,h)=>{rr(x,y,w,h,3,'#fff59d');ln(x+5,y+8,x+w-5,y+8,'#000',1);ln(x+5,y+15,x+w-12,y+15,'#000',1);ln(x+5,y+22,x+w-8,y+22,'#000',1)}),
+'座位':TBL,'座位區':TBL,'你的座位':TBL,
+'電視':S_((x,y,w,h)=>{rr(x+4,y+2,w-8,h-8,3,'#212121');rr(x+7,y+5,w-14,h-14,2,night()?'#ffee58':'#4fc3f7');fr('#424242',x+w/2-8,y+h-6,16,4)}),
+'講台':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+10,y+4,w-20,h-4,3,'#8d6e63');rr(x+6,y+2,w-12,6,2,'#a1887f');ln(x+w/2,y+2,x+w/2,y-6,'#333',1);ell(x+w/2,y-7,3,2,'#333')}),
+'黑板':S_((x,y,w,h)=>{rr(x,y,w,h,2,'#8d6e63');rr(x+3,y+2,w-6,h-6,1,'#2e7d32');ln(x+16,y+6,x+80,y+6,'#fff',1);ln(x+16,y+10,x+120,y+10,'#fff',1);ln(x+160,y+7,x+210,y+7,'#fff',1);fr('#d7ccc8',x+8,y+h-3,10,2)}),
+'書架':BK_,'書架（借書）':BK_,
+'神明桌':S_((x,y,w,h)=>{rr(x+4,y+18,w-8,h-18,3,'#6d4c41');rr(x+4,y+18,w-8,9,2,'#d32f2f');ell(x+w/2,y+14,6,3,'#ffd54f');ln(x+w/2-2,y+12,x+w/2-2,y+2,'#fff',1);ln(x+w/2+2,y+12,x+w/2+3,y+3,'#fff',1);fr('#e53935',x+8,y+8,4,10);fr('#e53935',x+w-12,y+8,4,10)}),
+'路燈':S_((x,y,w,h)=>{ell(x+8,y+7,10,6,'rgba(255,241,118,.2)');ln(x+8,y+6,x+8,y+h,'#37474f',2);ell(x+8,y+5,6,4,'#fff176');ell(x+8,y+h,5,2,'#333')}),
+'走廊':DOOR,'出口':DOOR,'出門':DOOR,
+'校門口':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x+2,y+14,14,h-14,2,'#b71c1c');rr(x+w-16,y+14,14,h-14,2,'#b71c1c');rr(x,y+2,w,16,4,'#c62828');for(let i=0;i<w;i+=6)fr('rgba(255,255,255,.15)',x+i,y+4,3,3);rr(x+w/2-32,y+8,64,12,2,'#fff');for(let i=0;i<7;i++)fr('#37474f',x+20+i*8,y+28,2,h-28);ln(x+18,y+34,x+w-18,y+34,'#37474f',2);txt('校門口',x+w/2,y+18,9,'#b71c1c')}),
+'往校外':S_((x,y,w,h)=>{rr(x+2,y+4,10,h-4,2,'#b71c1c');rr(x+w-12,y+4,10,h-4,2,'#b71c1c');rr(x,y,w,10,3,'#c62828');txt('往校外',x+w/2,y+9,8,'#fff');fr('rgba(0,0,0,.2)',x+14,y+12,w-28,h-12)})};
 const rc=(o,c,x,y,w,h)=>{g.fillStyle=c;g.fillRect(o.x+x,o.y+y,w,h)};
 const FX={
 '床':o=>{rc(o,'#3949ab',4,22,o.w-8,o.h-26);for(let i=0;i<o.w-8;i+=8)rc(o,'#5c6bc0',4+i,22,4,o.h-26);rc(o,'#fff',6,5,26,13);rc(o,'#e8eaf6',34,5,26,13)},
@@ -410,9 +469,11 @@ function bld(o){const n=o.w;g.fillStyle='rgba(0,0,0,.1)';for(let y=14;y<o.h;y+=6
  if(o.k=='e'){for(let i=0;i<22;i+=4)rc(o,i/4%2?'#fff':'#e53935',dx-2+i,o.h-30,4,6);rc(o,'#3e2723',dx,o.h-24,18,24);rc(o,'#90caf9',dx+2,o.h-22,14,10);rc(o,'#ffd54f',dx+14,o.h-10,2,2);rc(o,'#bdbdbd',dx-3,o.h-2,24,2)}
  rc(o,'#546e7a',n-14,34,10,6);rc(o,'#2e7d32',2,o.h-8,6,8);rc(o,'#2e7d32',n-8,o.h-8,6,8)}
 function dObj(o){if(o.k=='p'){const d=D[o.a];if(d.an)pet(o.x+1,o.y,d.c,o.mvg?S.fr:0,o.a=='dog');else man(o.x+2,o.y,d.c,o.mvg?S.fr:0);txt(d.n,o.x+8,o.y-2,8,'#fff');return}
- if(o.k=='t'){g.fillStyle='#5d4037';g.fillRect(o.x+13,o.y+20,6,12);g.fillStyle='#2e7d32';g.fillRect(o.x+2,o.y+2,28,22);g.fillStyle='#43a047';g.fillRect(o.x+6,o.y,20,8);g.fillStyle='#1b5e20';g.fillRect(o.x+2,o.y+20,28,4);return}
+ if(o.k=='t'){ell(o.x+16,o.y+30,12,3,'rgba(0,0,0,.25)');rr(o.x+13,o.y+18,6,13,1,'#5d4037');ell(o.x+16,o.y+14,15,12,'#2e7d32');ell(o.x+10,o.y+11,9,8,'#388e3c');ell(o.x+22,o.y+10,8,7,'#43a047');ell(o.x+16,o.y+6,8,6,'#4caf50');return}
  if(o.a=='bike'){bikeRack(o);return}
- const big=o.h>=48&&o.w>=64&&o.k!='d';g.fillStyle=o.c;g.fillRect(o.x,o.y,o.w,o.h);
+ const BLD=['租屋處','教學大樓','學餐','手搖飲料店','便利商店','麻將館'];
+ if(!BLD.includes(o.n)){const sh=SH[o.n]||(o.k=='d'&&!o.n?TBL:0);if(sh){sh(o);if(o.k=='i'&&o.n)txt(o.n.replace(/（.*/,''),o.x+o.w/2,o.y-2,8,'#fff');return}}
+ const big=BLD.includes(o.n);g.fillStyle=o.c;g.fillRect(o.x,o.y,o.w,o.h);
  if(big){bld(o);g.strokeStyle='#000';g.lineWidth=1;g.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-1);txt(o.n,o.x+o.w/2,o.y+20,9,'#fff');return}
  g.fillStyle='rgba(255,255,255,.28)';g.fillRect(o.x,o.y,o.w,3);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(o.x,o.y+o.h-3,o.w,3);for(let y=7;y<o.h-3;y+=5){g.fillStyle='rgba(0,0,0,.07)';g.fillRect(o.x+1,o.y+y,o.w-2,1)}
  g.strokeStyle='#000';g.lineWidth=1;g.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-1);
@@ -422,24 +483,25 @@ const OS=()=>{const n=night()?'n':'d';return M[S.map].o.filter(o=>!o.ph||o.ph==n
 function near(){let b=null,bd=1e9;for(const o of OS()){if(!'ipe'.includes(o.k))continue;const dx=Math.max(o.x-(S.x+10),0,S.x-(o.x+o.w)),dy=Math.max(o.y-(S.y+8),0,S.y-(o.y+o.h)),d=Math.hypot(dx,dy);if(d<9&&d<bd){bd=d;b=o}}return b}
 const ov2=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function wander(dt){const L=OS();for(const o of L){if(o.k!='p'||!D[o.a].w)continue;if(o.hx==null){o.hx=o.x;o.hy=o.y;o.t=0}o.t-=dt;if(o.t<=0){o.t=1+R()*2.5;o.dx=pk([-1,0,0,1]);o.dy=pk([-1,0,0,1])}o.mvg=o.dx||o.dy;
- const nx=o.x+o.dx*22*dt,ny=o.y+o.dy*22*dt;if(Math.abs(nx-o.hx)>40||Math.abs(ny-o.hy)>32||nx<2||nx>462||ny<30||ny>300)continue;const r={x:nx,y:ny,w:16,h:16};if(L.some(q=>q!=o&&'dipet'.includes(q.k)&&ov2(r,q))||ov2(r,{x:S.x,y:S.y,w:10,h:8}))continue;o.x=nx;o.y=ny}}
+ const nx=o.x+o.dx*22*dt,ny=o.y+o.dy*22*dt;if(Math.abs(nx-o.hx)>40||Math.abs(ny-o.hy)>32||nx<2||nx>462||ny<30||ny>300)continue;const r={x:nx,y:ny,w:16,h:16};if(L.some(q=>q!=o&&'dipet'.includes(q.k)&&ov2(r,CB(q)))||ov2(r,{x:S.x,y:S.y,w:10,h:8}))continue;o.x=nx;o.y=ny}}
 function draw(){const m=M[S.map];g.setTransform(3,0,0,3,0,0);g.imageSmoothingEnabled=false;
  for(let y=0;y<20;y++)for(let x=0;x<30;x++){g.fillStyle=(x+y)%2?m.f1:m.f2;g.fillRect(x*16,y*16,16,16);if((x*7+y*13)%5==0){g.fillStyle=m.dt;g.fillRect(x*16+4,y*16+5,2,2)}}
  if(m.w){g.fillStyle=m.w;g.fillRect(0,0,480,32);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,28,480,4);for(const x of m.win){g.fillStyle='#b3e5fc';g.fillRect(x*16,6,28,16);g.fillStyle='#fff';g.fillRect(x*16+13,6,2,16)}}
- const L=OS();L.filter(o=>o.k=='f').forEach(o=>{g.fillStyle=o.c;g.fillRect(o.x,o.y,o.w,o.h)});
- const it=L.filter(o=>o.k!='f').map(o=>[o.y+o.h,()=>dObj(o)]);it.push([S.y+8,()=>{if(S.fall){g.save();g.translate(S.x+5,S.y+8);g.rotate(Math.min(S.fall,15)/15*Math.PI/2);g.translate(-S.x-5,-S.y-8)}man(S.x-1,S.y-8,'#ffeb3b',S.fr);if(S.fall)g.restore();txt('你',S.x+5,S.y-10,8,'#ffeb3b')}]);it.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
+ const L=OS();L.filter(o=>o.k=='f'||o.k=='r').forEach(o=>{if(o.k=='r')ell(o.x+o.w/2,o.y+o.h/2,o.w/2,o.h/2,o.c);else fr(o.c,o.x,o.y,o.w,o.h)});
+ const it=L.filter(o=>o.k!='f'&&o.k!='r').map(o=>[o.y+o.h,()=>dObj(o)]);it.push([S.y+8,()=>{if(S.fall){g.save();g.translate(S.x+5,S.y+8);g.rotate(Math.min(S.fall,15)/15*Math.PI/2);g.translate(-S.x-5,-S.y-8)}man(S.x-1,S.y-8,'#ffeb3b',S.fr);if(S.fall)g.restore();txt('你',S.x+5,S.y-10,8,'#ffeb3b')}]);it.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
  const h=hh(),al=OUT()?(h<17?0:h<19?(h-17)*.12:h<6?.38:.38):(h>=19||h<6?.15:0);if(al>0){g.fillStyle=`rgba(10,0,60,${al})`;g.fillRect(0,0,480,320)}
  if(S.go&&!busy&&near()){g.fillStyle='#fff';g.fillRect(S.x-2,S.y-26,14,12);g.fillStyle='#000';g.fillRect(S.x-1,S.y-25,12,10);txt('E',S.x+5,S.y-16,9,'#ffeb3b')}}
 let hc=0;const bar=(l,v,c)=>`<span class=st>${l}<u><s style="width:${v}%;background:${v<=20?'#f44':c}"></s></u></span>`;
 function hud(){if(hc++%6)return;const c=cur(),nx=S.tt.find(c=>c.s>S.t),a=S.tt.filter(c=>c.sat).length;$('#hs').innerHTML=`<b>🕒${clk()}</b>　${PN[S.map]}　小睡 ${(S.nap/60).toFixed(1)}h　💰$${S.m}　出席 ${a}/${S.tt.length}　${S.ur?'<b style=color:#f66>肚子絞痛！</b>':''}<br>${c?'📖 上課中：'+c.n:nx?'⏭ 下一堂 '+tm(nx.s)+' '+nx.n+'（'+nx.r+'）':'今天沒課了'}${S.q?'<br>📌 '+S.q.txt+(S.q.have?'（已取得）':''):''}<br>${bar('學業',S.a,'#4caf50')}${bar('精力',S.e,'#ffeb3b')}${bar('社交',S.c,'#29b6f6')}${bar('SAN',S.s,'#ba68c8')}${bar('飽食',S.f,'#ff9800')}${bar('水分',S.w,'#4fc3f7')}`}
 /* ---------- 主迴圈 ---------- */
+const CB=o=>o.k=='t'?{x:o.x+11,y:o.y+23,w:10,h:8}:o.n=='路燈'?{x:o.x+4,y:o.y+26,w:8,h:6}:o;
 const hit=(x,y,o)=>x<o.x+o.w&&x+10>o.x&&y<o.y+o.h&&y+8>o.y;
-function mv(a,b){const nx=S.x+a,ny=S.y+b;if(nx<2||nx>468||ny<26||ny>310)return;if(OS().some(o=>'dipet'.includes(o.k)&&hit(nx,ny,o)))return;S.x=nx;S.y=ny}
+function mv(a,b){const nx=S.x+a,ny=S.y+b;if(nx<2||nx>468||ny<26||ny>310)return;if(OS().some(o=>'dipet'.includes(o.k)&&hit(nx,ny,CB(o))))return;S.x=nx;S.y=ny}
 function go(a){S.map=a[0];S.x=a[1]*16;S.y=a[2]*16;adv(3);sfx(440,.1);cv.style.opacity=.2;setTimeout(()=>cv.style.opacity=1,120)}
 async function use(o){if(o.k=='e'){if(o.a[3]&&!opn(o.a[3]))return toast(o.n+'：現在不開放。');go(o.a)}else if(o.k=='p')await talk(o.a);else await A[o.a]()}
 async function restart(){if(busy)return;if(await ask('要重新開局嗎？今天的進度會消失。',['重新開始','繼續玩'])==0)location.reload()}
 function tick(dt){adv(dt/3);const k=c=>keys[c],dx=(k('ArrowRight')||k('KeyD')||T.r?1:0)-(k('ArrowLeft')||k('KeyA')||T.l?1:0),dy=(k('ArrowDown')||k('KeyS')||T.d?1:0)-(k('ArrowUp')||k('KeyW')||T.u?1:0);
- if(dx||dy){const run=(k('ShiftLeft')||k('ShiftRight'))&&S.e>5,l=Math.hypot(dx,dy),sp=(run?135:75)*dt;if(run)ch('e',-dt*.6);mv(dx/l*sp,0);mv(0,dy/l*sp);S.fr+=dt*(run?20:14)}
+ if(dx||dy){const run=(k('ShiftLeft')||k('ShiftRight')||T.run)&&S.e>5,l=Math.hypot(dx,dy),sp=(run?135:75)*dt;if(run)ch('e',-dt*.6);mv(dx/l*sp,0);mv(0,dy/l*sp);S.fr+=dt*(run?20:14)}
  wander(dt);chkEnd();if(S.over)return;
  for(const c of S.tt){if(!c.sat&&!c.pen&&S.t>=c.e){c.pen=1;ch('a',-9);S.miss++}if(!c.w10&&S.t>=c.s-10&&S.t<c.s){c.w10=1;toast(`⏰ 快上課了：〈${c.n}〉${c.r}`)}}
  if(S.ur&&S.t>S.ur){S.ur=0;ch('s',-25);ch('c',-15);ev.push(()=>say('','……來不及了。你的人生出現了一道不能言說的裂痕。'))}
@@ -455,6 +517,7 @@ onkeyup=e=>delete keys[e.code];
 $('#pd').innerHTML=[['u','▲','1/2'],['l','◀','2/1'],['r','▶','2/3'],['d','▼','3/2']].map(x=>`<button data-k=${x[0]} style="grid-area:${x[2]}">${x[1]}</button>`).join('');
 document.querySelectorAll('#pd button').forEach(b=>{b.onpointerdown=()=>T[b.dataset.k]=1;b.onpointerup=b.onpointerleave=()=>T[b.dataset.k]=0});
 $('#ab').onclick=()=>{if(S.go&&!busy){const o=near();o&&use(o)}};
+$('#rn').onpointerdown=()=>T.run=1;$('#rn').onpointerup=$('#rn').onpointerleave=$('#rn').onpointercancel=()=>T.run=0;document.addEventListener('contextmenu',e=>e.preventDefault());
 $('#bt').onclick=()=>S.go&&showTT();$('#bp').onclick=()=>S.go&&phone();$('#br').onclick=()=>S.go&&restart();
 /* ---------- 開始 ---------- */
 async function begin(){S.tt=mkTT();const k=await ask('【前一晚】明天好像有課。你拿起手機，要設鬧鐘嗎？',['設 6:30','設 7:30','設 8:30','不設，碰運氣']),al=[390,450,510][k];let w;
