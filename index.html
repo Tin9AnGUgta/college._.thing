@@ -59,7 +59,7 @@ function sfx(f,d=.08,ty='square',v=.04){try{AC=AC||new AudioContext();const o=AC
 const jg=a=>a.forEach((f,i)=>setTimeout(()=>sfx(f,.12),i*110));
 /* ---------- 狀態 ---------- */
 const init=()=>({t:0,map:'dorm',x:14*16,y:15*16,fr:0,a:50,e:90,c:45,s:70,m:600,f:60,w:60,nap:0,miss:0,mj:0,ph:0,gm:0,ur:0,urN:0,inv:0,inC:0,over:0,go:0,tt:[],q:0,qd:{},qn:0,crash:0,lib:0,gym:0,snk:0,ai:0,wz:0,fz:0,ow:0,ow1:0});
-const ch=(k,v)=>{k=='m'?S.m=Math.max(0,(S.m+v)|0):S[k]=cl(S[k]+v,0,100)};
+const ch=(k,v)=>{if(k=='s')v=v<0?v*.5:S.s<60?v*1.6:v;k=='m'?S.m=Math.max(0,(S.m+v)|0):S[k]=cl(S[k]+v,0,100)};
 const clk=()=>pad(S.t/60%24)+':'+pad(S.t%60);
 const cur=()=>S.tt.find(c=>S.t>=c.s&&S.t<c.e);
 const hh=()=>S.t/60%24,night=()=>hh()>=18.5||hh()<6;
@@ -187,10 +187,10 @@ street:{f1:'#6b7b8c',f2:'#64748a',dt:'#7d8da0',o:[[0,8,30,4,'#37474f','','f'],..
 [2,13,6,4,'#43a047','便利商店','e',['cvsm',14,16,[0,24]]],[20,13,7,5,'#8e24aa','麻將館','e',['mj',14,16]],BIKE(14,13),P_(10,15,'amway','d'),P_(17,16,'cat'),P_(6,10,'rider','n'),P_(22,10,'dog','n'),TR(9,13),TR(28,13),[10,6,1,2,'#fdd835','路燈','d'],[18,6,1,2,'#fdd835','路燈','d']]},
 campus:{f1:'#4caf50',f2:'#459f49',dt:'#66bb6a',o:[[13,6,4,12,'#d7ccc8','','f'],[2,10,26,3,'#d7ccc8','','f'],
 [3,2,8,4,'#90a4ae','教學大樓','e',['class',7,6,[6,18.5]]],[19,2,8,4,'#ffa726','學餐','e',['caf',22,6,[7,20]]],[12,18,6,2,'#c62828','往校外','e',['street',14,7]],[26,14,3,3,'#80cbc4','廁所','i','wc'],
-[6,14,3,3,'#4fc3f7','噴水池','i','fount'],[9,13,3,1,'#8d6e63','長椅','i','bench'],[12,13,1,2,'#fdd835','路燈','d'],[10,7,2,1,'#fff59d','公佈欄','i','board'],[24,7,1,2,'#e53935','販賣機','i','vend'],[19,13,5,4,'#c68642','籃球場','i','hoop'],[4,7,3,2,'#ffcc80','社團攤位','i','stand'],BIKE(17,7),
+[6,14,3,3,'#4fc3f7','噴水池','i','fount'],[9,13,3,1,'#8d6e63','長椅','i','bench'],[12,13,1,2,'#fdd835','路燈','d'],[10,7,2,1,'#fff59d','公佈欄','i','board'],[24,7,1,2,'#e53935','販賣機','i','vend'],[19,13,5,4,'#c68642','籃球場','i','hoop'],[12,3,4,2,'#ffcc80','社團攤位','i','stand','d'],BIKE(17,7),
 P_(8,11,'juan','d'),P_(18,11,'friend','d'),P_(22,9,'senior','d'),P_(13,8,'prof','d'),P_(15,16,'mj','d'),P_(8,11,'jog','n'),P_(14,9,'guard','n'),P_(22,9,'owl','n'),TR(1,14),TR(27,11),TR(10,17),TR(24,17)]},
 class:{f1:'#c5b08f',f2:'#bda684',w:'#6d4c41',win:[2,25],dt:'#cdbb9c',o:[[6,2,18,1,'#2e7d32','黑板','d'],[12,3,6,2,'#8d6e63','講台','d'],
-...[7,9,11,13].flatMap(y=>[3,9,15,21].map(x=>[x,y,3,1,'#a1887f','','d'])),[3,15,3,1,'#c9a27a','你的座位','i','seat'],P_(8,5,'juan'),[13,18,4,2,'#ffb74d','走廊','e',['campus',7,6]]]},
+...[7,9,11,13].flatMap(y=>[3,9,15,21].map(x=>[x,y,3,1,'#a1887f','','d'])),[3,15,3,1,'#c9a27a','你的座位','i','seat'],P_(8,5,'juan','d'),[13,18,4,2,'#ffb74d','走廊','e',['campus',7,6]]]},
 caf:{f1:'#ffe0b2',f2:'#ffd9a0',w:'#bf6f2b',win:[3,23],dt:'#ffeccc',o:[[5,3,20,2,'#8d6e63','餐檯（點餐）','i','food'],P_(14,2,'boss'),TB(4,8),TB(12,8),TB(20,8),TB(4,13),TB(20,13),P_(10,11,'friend'),WT(26,6),[13,18,4,2,'#ffb74d','出口','e',['campus',22,6]]]},
 mj:{f1:'#4e342e',f2:'#45302a',w:'#2a1b2e',win:[],dt:'#5d4037',o:[[11,2,8,2,'#a1887f','櫃台','d'],P_(14,4,'mjboss'),[4,6,5,5,'#2e7d32','麻將桌','i','mj'],[20,6,5,5,'#2e7d32','麻將桌','i','mj'],P_(10,13,'mj'),P_(24,14,'drunk'),[2,14,3,3,'#6d4c41','神明桌','d'],[13,18,4,2,'#ffb74d','出口','e',['street',23,12]]]},
 cvsm:{f1:'#eceff1',f2:'#e0e6ea',w:'#1565c0',win:[],dt:'#cfd8dc',o:[[4,4,6,2,'#ffb300','零食架','i','snackrack'],[12,4,6,2,'#ffb300','零食架','i','snackrack'],[20,2,8,2,'#80cbc4','冷藏櫃','i','cooler'],[3,12,5,2,'#ef6c00','關東煮','i','oden'],[20,9,6,2,'#8d6e63','收銀台','i','cvs'],P_(23,8,'cvsc'),[4,15,6,2,'#a1887f','座位區','d'],[13,18,4,2,'#ffb74d','出口','e',['street',4,17]]]},
@@ -311,17 +311,17 @@ async()=>{if(!night()||!OUT())return;await say('','背後傳來急促的腳步�
 async()=>{await say('📱','學姊：「考古題更新了，需要的話跟我說。」')},
 async()=>{if(S.map=='dorm')return;await say('📱','手機只剩 5% 的電了。');ch('s',-3)},
 async()=>{await say('📱','校園廣播：「請遺失一隻左腳拖鞋的同學，前往學務處。」');ch('s',2)}];
-function hr(h){S.ow=Math.max(0,S.ow-5);ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
+function hr(h){S.ow=Math.max(0,S.ow-5);if(S.s<70)ch('s',S.s<40?2:1);ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
  if(h==12)toast('中午了。學餐那邊開始排隊了。');if(h==24)toast('已經午夜了……');if(S.f<25&&R()<.6)toast('你的肚子發出了不祥的叫聲。');if(S.w<25&&R()<.6)toast('喉嚨乾得快冒煙了。');if(R()<.3)ev.push(pk(EV))}
 function adv(m){const o=S.t;S.t+=m;for(let h=Math.floor(o/60)+1;h<=Math.floor(S.t/60);h++)hr(h)}
 /* ---------- 上課 ---------- */
 function classGame(c,d){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><canvas id=cg width=480 height=270 style="width:100%;image-rendering:pixelated"></canvas><p id=ci style="margin:4px">黑板上冒出重點時，點它來抄筆記（空白鍵也行）。教授轉身才敢偷懶，轉頭前會有預兆。</p><div><button data-m=0>1 聽課抄筆記</button><button data-m=1>2 偷滑手機</button><button data-m=2>3 趴下偷睡</button><button data-m=3>4 溜出教室</button></div></div>`;
 const cv2=$('#cg'),x=cv2.getContext('2d'),WD=['重點！','考試會考','∫ 2x dx','F = ma','期中範圍','Python','這很重要','記起來'],TOT=24*30;x.font='14px DotGothic16,sans-serif';
-let mode=0,fr=0,ps=0,pt=100,chips=[],notes=0,caught=0,phS=0,slS=0,dz=cl((70-S.e)*.6,0,60),forced=0,flash=0,sneak=0;
+let mode=0,fr=0,ps=0,pt=100,chips=[],notes=0,caught=0,phS=0,slS=0,dz=cl((70-S.e)*.4,0,35),forced=0,flash=0,sneak=0,nod=0;
 const say_=t=>$('#ci').textContent=t;
 const catchIt=()=>{caught++;mode=0;forced=0;flash=20;say_('被教授發現了！');sfx(150,.25,'sawtooth')};
 const fin=lv=>{clearInterval(iv);kd=null;ov.style.display='none';busy--;r({left:lv,notes,caught,phS,slS,tot:Math.max(1,fr)})};
-const setM=m=>{if(m==3){if(forced)return;sneak=45;mode=0;say_('你貓著腰往後門爬……教授一轉頭就完了（按 1 可中止）');return}if(forced&&m!=2)return;sneak=0;mode=m;if(ps==2&&(m==1||m==2))catchIt()};
+const setM=m=>{if(m==3){if(forced)return;sneak=45;mode=0;say_('你貓著腰往後門爬……教授一轉頭就完了（按 1 可中止）');return}if(forced&&m!=2)return;sneak=0;mode=m;if(nod>0){nod=0;dz=m==0?60:dz;if(m==0)say_('你用力眨眼，清醒了一點。')}if(ps==2&&(m==1||m==2))catchIt()};
 const cap=q=>{if(mode==0&&q){q.got=1;notes++;sfx(880,.05)}};
 ov.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setM(+b.dataset.m));
 kd=e=>{if(e.key.length==1&&'1234'.includes(e.key))setM(+e.key-1);if(e.key==' ')cap(chips.find(q=>!q.got))};
@@ -329,8 +329,8 @@ cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect(),px=(e.clientX-b.left)/
 const iv=setInterval(()=>{fr++;pt--;
  if(pt<=0){if(ps==0){ps=1;pt=26;say_('……教授的腳步聲停下來了。')}else if(ps==1){ps=2;pt=50+R()*40|0;if(mode==1||mode==2)catchIt()}else{ps=0;pt=90+R()*80|0;say_('教授轉回黑板繼續寫。')}}
  if(fr%48==0)chips.push({x:120+R()*240,y:55+R()*70,t:100,w:pk(WD)});chips.forEach(q=>q.t--);chips=chips.filter(q=>q.t>0);
- if(mode==2){dz=Math.max(0,dz-.5);slS++}else{dz+=(mode==0?.043:.02)*Math.exp(.006*fr);if(mode==1)phS++}
- if(dz>=100&&!forced){forced=60;mode=2;dz=60;say_('你的頭開始往下沉……')}
+ if(mode==2){dz=Math.max(0,dz-.5);slS++}else{dz+=(mode==0?.016:.008)*Math.exp(.005*fr);if(mode==1)phS++}
+ if(dz>=100&&!forced&&!nod){nod=26;say_('你的眼皮越來越重……按 1 振作精神！')}if(nod>0&&--nod==0){forced=60;mode=2;dz=60;say_('你的頭沉了下去……')}
  if(forced){forced--;if(ps==2&&mode==2)catchIt()}
  if(flash>0)flash--;
  if(sneak>0){if(ps!=0){catchIt();sneak=0}else if(--sneak==0)return fin(1)}
@@ -356,16 +356,23 @@ async function klass(c){S.inC=1;c.done=1;const late=S.t-c.s;await fp('class',lat
   else if(R()<.2){if(await ask('教授：「那邊那位同學，你來說說看。」',['舉手回答','假裝在寫筆記'],'教授')==0){if(R()<.5){ch('a',3);ch('c',2);await say('教授','「……還可以。」')}else{ch('s',-4);await say('教授','「嗯，有想法是好事，但不是這個。」')}}else ch('s',-1)}
   first=0;adv(d);if(S.t<c.e){adv(10);toast('下課十分鐘……上課鐘響了。')}}
  S.inC=0;if(S.map=='class'&&S.t>=c.e)await say('','下課了。教室瞬間活了過來。')}
+async function eggClass(){const k=R()*3|0;
+ if(k==0){await say('','教室裡只剩你一個人。窗外的天色漸漸暗了。');await say('','忽然，後排傳來「喀」的一聲……');if(await ask('最後一排有個黑影在晃動。',['走過去看看','假裝沒聽到'])==0){await say('','是清潔阿姨！她嚇得退了一步：「同學你怎麼還在這？」');await say('清潔阿姨','「快回去啦，我要拖地了。這個給你。」');eat(8);ch('s',5);toast('拿到一塊餅乾')}else{ch('s',-4);await say('','你背對那個方向，聽見拖把拖地的聲音越來越近。……你決定相信那是清潔阿姨。')}}
+ else if(k==1){await say('','你發現黑板上的粉筆字好像不是剛才那些。');await say('','上面寫著：「你還不回家嗎？」');if(await ask('你要……',['拿粉筆回一句「不回」','把它擦掉'])==0){ch('s',4);await say('','過了幾秒，黑板上多了一行：「那你記得鎖門。」你渾身起雞皮疙瘩。')}else await say('','粉筆灰飄了你一身。你打了個噴嚏。')}
+ else{await say('','你發現講台後面的椅子上有人影。是教授，不知什麼時候睡著了。');const c=await ask('教授睡得很沉。',['輕輕叫醒他','拿走桌上的點心','悄悄離開']);if(c==0){ch('a',3);ch('e',-3);adv(10);await say('教授','「嗯？啊，你還在啊。這題你來看一下……」他又講了十分鐘。')}else if(c==1){eat(10);ch('s',3);ch('c',-3);await say('','你拿走了一塊綠豆糕。教授在夢裡說：「嗯，平時成績……」')}else ch('s',1)}}
+const HRS={caf:[7,20],lib:[8,22],gym:[6,23],drinkm:[10,23],snack:[17,26]},OUTX={caf:['campus',22,6,'老闆','「同學，要打烊囉！剩下的便當明天請早。」'],lib:['campus',14,16,'圖書館管理員','「閉館時間到了，請把書放回原位。」'],gym:['street',14,7,'健身教練','「要關門了，器材請歸位。明天見！」'],drinkm:['street',23,6,'飲料店店員','「不好意思，我們打烊了。」'],snack:['street',14,7,'宵夜店老闆','「要收攤囉！明天再來。」']};
+async function closeUp(k){const o=OUTX[k];await say(o[3],o[4]);await say('','你被請出了店門。');S.map=o[0];S.x=o[1]*16;S.y=o[2]*16;adv(3)}
+async function lockClass(){await say('警衛','「同學！要鎖門了，你怎麼還在這裡？」');await say('','警衛用手電筒把你「護送」到走廊。');S.map='campus';S.x=7*16;S.y=6*16;ch('c',-1);adv(3)}
 async function roll(){await say('教授','「來，點名。我念到名字的請舉手。」');if(R()<.55){if(await ask('隔壁同學小聲說：「幫我喊個到，拜託。」',['幫他喊到','裝沒聽到'])==0){if(await timing('趁教授轉身……')){ch('c',8);ch('s',3);await say('','成功蒙混過關。')}else{ch('c',-6);ch('a',-3);ch('s',-5);await say('教授','「剛剛是誰在講話？」')}}else ch('c',-3)}else{ch('a',1);await say('教授','「很好，全員到齊。」')}}
 /* ---------- 結局 ---------- */
 const E={expel:['被二一退學','學務處的信比鬧鐘還準時。你說：「可是我才玩了一天欸？」'],faint:['過勞昏倒','你倒下的那一刻，腦中浮現的是：「我的作業還沒交。」'],mad:['精神崩潰・出家','你看破紅塵，剃度出家。法號：已讀不回。'],soc:['社交達人','全校都認識你，連學校的貓都叫你學長。'],geek:['卷王附體','你已經不是人了，你是一台行走的筆記本。'],zen:['大徹大悟','San 值爆表。你看透了學分、考試與人生，微笑著走進夕陽。'],oh:['歐皇降臨','麻將桌上的神降臨在你身上。老闆娘偷偷把你的照片貼在牆上。'],sleep:['睡覺大師','你整天幾乎都在睡，而且睡得理直氣壯。'],lie:['躺平大師','一堂課都沒去，卻活得很安詳。教授：「你是哪位？」'],night:['熬夜修仙成功','天亮了，你還沒睡。修仙成功，只是明天的你要付帳。'],star:['模範大學生','全勤、認真、不翹課。你是教授心中的理想型，也是同學心中的捲王候補。'],gamer:['電競魂','你沒有上場比賽，但你的魂已經在戰場上了。'],phone:['低頭族代表','你的拇指今天跑了半個馬拉松。'],broke:['月底吃土','錢包空空如也，你開始研究免費試吃的時間表。'],pop:['人氣王','今天到處都有人跟你打招呼，你的手機通知多到變成一種噪音。'],norm:['平凡順利的一天','沒有大風大浪。就是平凡地、有點累地，過完了這一天。'],
 wtox:['水中毒','你喝水喝到停不下來，身體裡的鈉被稀釋得一乾二淨。護理師說：「喝水是好事，但不是這樣喝。」'],dehyd:['脫水送醫','你一整天只顧著做事，忘了喝水。救護車上，護理師說：「同學，水很便宜。」'],starve:['營養不良昏倒','你整天沒好好吃東西，終於在路邊坐了下來。路人問你：「需要幫忙嗎？」你說：「我想吃雞腿。」'],crash:['車禍進急診','你今天撞了太多次。腳踏車說：「我不幹了。」你在急診室被問：「你是怎麼騎的？」'],doze:['睡死在原地','過了午夜，你的身體先替你做了決定。你倒在原地呼呼大睡，明天的你會處理。'],dang:['被當邊緣','缺課太多，教授的點名簿上寫滿了你的名字。你說：「我只是……沒有去。」'],muscle:['健身魂','你今天把一半的人生花在健身房，剩下的一半拿來喘氣。肌肉在對你點頭。'],lib:['圖書館幽靈','你整天待在圖書館。管理員說：「你是我們這裡新來的書。」'],snackk:['宵夜成癮者','你今天的第三餐是宵夜，第四餐也是。胃：「我們談談。」'],brain:['腦袋被 AI 洗乾淨','你看了太多 AI 生成的影片，現在腦中只剩下「鯊魚穿球鞋」。'],quest:['跑腿王','全勤之外，你還接了一堆 NPC 的任務。你是這所學校的萬事通。']};
-function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(!a)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(a==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
+function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(S.s>=95&&S.a>=40)return'zen';if(!a)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(a==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
 const DEATHS=['expel','faint','mad','dehyd','starve','crash','wtox'];
 function deathFx(k){S.over=1;let f=0;sfx(200,.4,'sawtooth',.06);const iv=setInterval(()=>{f++;S.fall=f;draw();g.setTransform(3,0,0,3,0,0);g.fillStyle=`rgba(180,0,0,${Math.min(.55,f/60)})`;g.fillRect(0,0,480,320);const rad=Math.max(0,260-f*3.4),gr=g.createRadialGradient(S.x+5,S.y,rad*.2,S.x+5,S.y,rad+30);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');g.fillStyle=gr;g.fillRect(0,0,480,320);if(f>15)txt('💀 你倒下了……',240,150,18,'#fff');if(f%12==0)sfx(180,.3,'sawtooth',.05);if(f>=80){clearInterval(iv);S.fall=0;S.dd=1;end(k)}},33)}
 function end(k){if(DEATHS.includes(k)&&!S.dd){deathFx(k);return}S.over=1;busy=0;const e=E[k],gr=S.a>=80?'A':S.a>=65?'B':S.a>=50?'C':S.a>=30?'D':'F';ov.style.display='flex';dlg.style.display='none';
  ov.innerHTML=`<div class=box><h3>📜 今日成績單</h3><h2>${e[0]}</h2><p>${e[1]}</p><table><tr><td>學業評等</td><td>${gr}</td><td>出席</td><td>${S.tt.filter(c=>c.sat).length}/${S.tt.length}</td></tr><tr><td>社交</td><td>${S.c|0}</td><td>SAN 值</td><td>${S.s|0}</td></tr><tr><td>小睡</td><td>${(S.nap/60).toFixed(1)}h</td><td>麻將</td><td>${S.mj>=0?'+':''}${S.mj}</td></tr><tr><td>存款</td><td>$${S.m}</td><td>滑手機</td><td>${S.ph} 次</td></tr><tr><td>完成任務</td><td>${S.qn}</td><td>運動／讀書</td><td>${S.gym}／${S.lib}</td></tr></table><p>截圖分享你的結局吧！</p><button onclick="location.reload()">再活一天</button></div>`;jg([523,659,784,1047])}
-function chkEnd(){if(S.ow>=30&&!S.ow1){S.ow1=1;ch('e',-8);ch('s',-8);toast('你覺得頭暈、反胃……水好像喝太多了。')}if(S.ow<10)S.ow1=0;if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.s>=100)end('zen');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve');else if(S.ow>=70)end('wtox')}
+function chkEnd(){if(S.s<=20&&!S.sw){S.sw=1;toast('你快撐不住了……找個地方放鬆一下吧。')}if(S.s>35)S.sw=0;if(S.ow>=30&&!S.ow1){S.ow1=1;ch('e',-8);ch('s',-8);toast('你覺得頭暈、反胃……水好像喝太多了。')}if(S.ow<10)S.ow1=0;if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve');else if(S.ow>=70)end('wtox')}
 /* ---------- 繪製 ---------- */
 const txt=(s,x,y,z,c)=>{g.font=`${z}px DotGothic16,'Noto Sans TC',sans-serif`;g.textAlign='center';g.lineWidth=2.5;g.strokeStyle='#000';g.strokeText(s,x,y);g.fillStyle=c;g.fillText(s,x,y)};
 function man(x,y,c,fr){const b=Math.sin(fr)>0?1:0;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,10,3);g.fillStyle='#37474f';g.fillRect(x+2,y+11+b,3,4-b);g.fillRect(x+7,y+12-b,3,3+b);g.fillStyle=c;g.fillRect(x+1,y+5,10,7);g.fillStyle='#ffcc99';g.fillRect(x+2,y,8,6);g.fillStyle='#3e2723';g.fillRect(x+2,y,8,2);g.fillStyle='#000';g.fillRect(x+4,y+3,1,1);g.fillRect(x+7,y+3,1,1)}
@@ -393,6 +400,7 @@ const SH={
 '飲水機':S_((x,y,w,h)=>{shd(x,y,w,h);ell(x+w/2,y+11,9,11,'#81d4fa');rr(x+4,y+20,w-8,h-22,3,'#cfd8dc');fr('#ef5350',x+9,y+26,4,4);fr('#42a5f5',x+w-13,y+26,4,4);fr('#90a4ae',x+8,y+h-10,w-16,3)}),
 '鐘':S_((x,y)=>{ell(x+8,y+8,7,7,'#ffd54f');ln(x+8,y+8,x+8,y+3,'#000');ln(x+8,y+8,x+11,y+9,'#000')}),
 '麻將桌':S_((x,y,w,h)=>{shd(x,y,w,h);[[w/2,5],[w/2,h-5]].forEach(p=>ell(x+p[0],y+p[1],10,4,'#5d4037'));[[5,h/2],[w-5,h/2]].forEach(p=>ell(x+p[0],y+p[1],4,10,'#5d4037'));rr(x+10,y+10,w-20,h-20,6,'#6d4c41');rr(x+14,y+14,w-28,h-28,4,'#2e7d32');for(let i=0;i<7;i++){fr('#fffde7',x+20+i*6,y+17,5,6);fr('#fffde7',x+20+i*6,y+h-23,5,6);fr('#fffde7',x+17,y+22+i*5,6,4);fr('#fffde7',x+w-23,y+22+i*5,6,4)}ell(x+w/2,y+h/2,4,4,'#fff');fr('#d32f2f',x+w/2-1,y+h/2-1,2,2)}),
+'社團攤位':S_((x,y,w,h)=>{shd(x,y,w,h);ln(x+3,y+8,x+3,y+h-2,'#8d6e63',2);ln(x+w-3,y+8,x+w-3,y+h-2,'#8d6e63',2);rr(x+2,y+17,w-4,h-17,2,'#7e57c2');fr('#b39ddb',x+2,y+19,w-4,2);fr('#fff',x+8,y+13,12,4);fr('#fff59d',x+13,y+12,12,4);for(let i=0;i<3;i++)rr(x+34+i*9,y+10,6,7,2,['#e53935','#fdd835','#43a047'][i]);for(let i=0;i<8;i++)fr(i%2?'#fff':'#ff7043',x+i*w/8,y,w/8+.5,10);for(let i=0;i<8;i++)ell(x+i*w/8+w/16,y+10,w/16,3,i%2?'#fff':'#ff7043');rr(x+w/2-14,y+22,28,8,2,'#fff59d');txt('招新',x+w/2,y+29,7,'#c62828');ln(x+w-4,y-2,x+w-4,y+8,'#bbb');ell(x+w-4,y-6,4,5,'#f06292');ln(x+w+2,y-3,x+w-2,y+8,'#bbb');ell(x+w+2,y-7,4,5,'#29b6f6')}),
 '籃球場':S_((x,y,w,h)=>{rr(x,y,w,h,3,'#d9a45e');fr('#b3402e',x+w/2-14,y+3,28,26);g.strokeStyle='#fff';g.lineWidth=1;g.strokeRect(x+1.5,y+1.5,w-3,h-3);g.strokeRect(x+w/2-14,y+3,28,26);g.beginPath();g.arc(x+w/2,y+29,10,0,Math.PI);g.stroke();g.beginPath();g.arc(x+w/2,y+8,32,.35,Math.PI-.35);g.stroke();g.beginPath();g.arc(x+w/2,y+h,8,Math.PI,0);g.stroke();fr('#fff',x+w/2-9,y+4,18,2);ell(x+w/2,y+11,5,2,'#e65100');ln(x+w/2,y+2,x+w/2,y-8,'#78909c',2)}),
 '長椅':S_((x,y,w,h)=>{shd(x,y,w,h);rr(x,y,w,4,2,'#a1887f');rr(x,y+5,w,3,2,'#a1887f');rr(x,y+9,w,3,2,'#8d6e63');fr('#4e342e',x+4,y+12,3,4);fr('#4e342e',x+w-7,y+12,3,4);fr('#4e342e',x+3,y,2,12);fr('#4e342e',x+w-5,y,2,12)}),
 '噴水池':S_((x,y,w,h)=>{const cx=x+w/2,cy=y+h/2+3;ell(cx,cy+2,w/2,h/2-2,'#90a4ae');ell(cx,cy,w/2-2,h/2-4,'#b0bec5');ell(cx,cy,w/2-6,h/2-8,'#4fc3f7');ell(cx,cy-2,8,4,'#cfd8dc');fr('#b0bec5',cx-2,cy-14,4,12);ell(cx,cy-16,6,3,'#cfd8dc');ln(cx,cy-16,cx,cy-24,'#e1f5fe',2);ln(cx,cy-24,cx-6,cy-12,'#e1f5fe',1);ln(cx,cy-24,cx+6,cy-12,'#e1f5fe',1);g.strokeStyle='#fff';g.lineWidth=1;g.beginPath();g.ellipse(cx,cy+4,12,5,0,0,7);g.stroke()}),
@@ -484,17 +492,29 @@ function near(){let b=null,bd=1e9;for(const o of OS()){if(!'ipe'.includes(o.k))c
 const ov2=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 function wander(dt){const L=OS();for(const o of L){if(o.k!='p'||!D[o.a].w)continue;if(o.hx==null){o.hx=o.x;o.hy=o.y;o.t=0}o.t-=dt;if(o.t<=0){o.t=1+R()*2.5;o.dx=pk([-1,0,0,1]);o.dy=pk([-1,0,0,1])}o.mvg=o.dx||o.dy;
  const nx=o.x+o.dx*22*dt,ny=o.y+o.dy*22*dt;if(Math.abs(nx-o.hx)>40||Math.abs(ny-o.hy)>32||nx<2||nx>462||ny<30||ny>300)continue;const r={x:nx,y:ny,w:16,h:16};if(L.some(q=>q!=o&&'dipet'.includes(q.k)&&ov2(r,CB(q)))||ov2(r,{x:S.x,y:S.y,w:10,h:8}))continue;o.x=nx;o.y=ny}}
+const FLC={},TXT={dorm:'wood',street:'pave',campus:'grass',class:'wood',caf:'tile',mj:'carpet',cvsm:'tile',drinkm:'tile',gym:'rubber',lib:'wood',snack:'concrete'};
+const hx=(c,k)=>{const n=parseInt(c.slice(1),16);return '#'+[16,8,0].map(b=>Math.max(0,Math.min(255,((n>>b&255)*k)|0)).toString(16).padStart(2,'0')).join('')};
+function floorTex(k){if(FLC[k])return FLC[k];const m=M[k],cn=document.createElement('canvas');cn.width=480;cn.height=320;const t=cn.getContext('2d');let sd=k.length*977+7;const rn=()=>{sd=(sd*1664525+1013904223)>>>0;return sd/4294967296},b=m.f1,ty=TXT[k]||'tile',f=(c,x,y,w,h)=>{t.fillStyle=c;t.fillRect(x|0,y|0,w|0||1,h|0||1)};
+ f(b,0,0,480,320);
+ if(ty=='grass'){for(let i=0;i<1500;i++)f(hx(b,.85+rn()*.3),rn()*480,rn()*320,1+rn()*3,1+rn()*2);for(let i=0;i<520;i++){const x=rn()*476|0,y=rn()*316|0;f(hx(b,.7),x,y+1,1,2);f(hx(b,.7),x+2,y,1,3);f(hx(b,1.25),x+1,y,1,1)}for(let i=0;i<44;i++){const x=rn()*476|0,y=rn()*316|0;f(['#fff','#ffeb3b','#f48fb1','#fff59d'][i%4],x,y,2,2);f('#fbc02d',x,y,1,1)}}
+ else if(ty=='wood'){for(let y=0;y<320;y+=8){let x=-(rn()*60|0);while(x<480){const w=48+(rn()*48|0);f(hx(b,.9+rn()*.2),x,y,w,8);f(hx(b,.68),x,y+7,w,1);f(hx(b,.74),x+w-1,y,1,8);for(let j=0;j<3;j++)f(hx(b,.85+rn()*.1),x+rn()*w,y+1+rn()*5,6+rn()*14,1);if(rn()<.25)f(hx(b,.62),x+3+rn()*(w-8),y+3,2,2);x+=w}}}
+ else if(ty=='tile'){const z=20;for(let y=0;y<320;y+=z)for(let x=0;x<480;x+=z){f(hx(b,.96+rn()*.08),x,y,z,z);f(hx(b,.8),x+z-1,y,1,z);f(hx(b,.8),x,y+z-1,z,1);f(hx(b,1.1),x+1,y+1,z-3,1);f(hx(b,1.06),x+1,y+1,1,z-3);if(rn()<.3)f(hx(b,.9),x+3+rn()*12,y+4+rn()*10,2,1);if(rn()<.12){f(hx(b,1.18),x+3,y+z-8,5,1);f(hx(b,1.18),x+4,y+z-6,3,1)}}}
+ else if(ty=='pave'){for(let y=0;y<320;y+=8){const o=(y/8%2)*8;for(let x=-o;x<480;x+=16){f(hx(b,.92+rn()*.16),x,y,16,8);f(hx(b,.72),x,y+7,16,1);f(hx(b,.76),x+15,y,1,8);if(rn()<.3)f(hx(b,1.12),x+2+rn()*8,y+2,3,1)}}for(let i=0;i<14;i++){let x=rn()*470,y=rn()*310;for(let j=0;j<10;j++){f(hx(b,.55),x,y,2,1);x+=1+rn()*2;y+=rn()*3-1}}for(let i=0;i<60;i++)f('#6a8f5a',rn()*480,rn()*320,2,1)}
+ else if(ty=='carpet'){for(let i=0;i<2600;i++)f(hx(b,.8+rn()*.45),rn()*480,rn()*320,1,1);for(let y=4;y<320;y+=16)for(let x=((y/16|0)%2)*8+4;x<480;x+=16){f(hx(b,1.35),x,y,2,2);f(hx(b,1.35),x-2,y+2,2,2);f(hx(b,1.35),x+2,y+2,2,2);f(hx(b,1.35),x,y+4,2,2)}}
+ else if(ty=='rubber'){for(let i=0;i<2200;i++)f(hx(b,.8+rn()*.5),rn()*480,rn()*320,1+rn()*2,1);for(let y=0;y<320;y+=40)f(hx(b,.88),0,y,480,1);for(let x=0;x<480;x+=40)f(hx(b,.88),x,0,1,320);f('#eceff1',0,150,480,2);f('#fdd835',0,154,480,1)}
+ else{for(let i=0;i<2400;i++)f(hx(b,.8+rn()*.45),rn()*480,rn()*320,1+rn()*2,1);t.globalAlpha=.1;for(let i=0;i<26;i++)f('#000',rn()*460,rn()*300,8+rn()*30,6+rn()*20);t.globalAlpha=1;for(let i=0;i<9;i++){let x=rn()*470,y=rn()*310;for(let j=0;j<14;j++){f(hx(b,.55),x,y,2,1);x+=1+rn()*3;y+=rn()*3-1}}}
+ return FLC[k]=cn}
 function draw(){const m=M[S.map];g.setTransform(3,0,0,3,0,0);g.imageSmoothingEnabled=false;
- for(let y=0;y<20;y++)for(let x=0;x<30;x++){g.fillStyle=(x+y)%2?m.f1:m.f2;g.fillRect(x*16,y*16,16,16);if((x*7+y*13)%5==0){g.fillStyle=m.dt;g.fillRect(x*16+4,y*16+5,2,2)}}
- if(m.w){g.fillStyle=m.w;g.fillRect(0,0,480,32);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,28,480,4);for(const x of m.win){g.fillStyle='#b3e5fc';g.fillRect(x*16,6,28,16);g.fillStyle='#fff';g.fillRect(x*16+13,6,2,16)}}
- const L=OS();L.filter(o=>o.k=='f'||o.k=='r').forEach(o=>{if(o.k=='r')ell(o.x+o.w/2,o.y+o.h/2,o.w/2,o.h/2,o.c);else fr(o.c,o.x,o.y,o.w,o.h)});
- const it=L.filter(o=>o.k!='f'&&o.k!='r').map(o=>[o.y+o.h,()=>dObj(o)]);it.push([S.y+8,()=>{if(S.fall){g.save();g.translate(S.x+5,S.y+8);g.rotate(Math.min(S.fall,15)/15*Math.PI/2);g.translate(-S.x-5,-S.y-8)}man(S.x-1,S.y-8,'#ffeb3b',S.fr);if(S.fall)g.restore();txt('你',S.x+5,S.y-10,8,'#ffeb3b')}]);it.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
+ g.drawImage(floorTex(S.map),0,0);
+ if(m.w){g.fillStyle=m.w;g.fillRect(0,0,480,32);g.fillStyle='rgba(255,255,255,.07)';for(let x=0;x<480;x+=10)g.fillRect(x,0,1,26);g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,24,480,4);g.fillStyle='rgba(0,0,0,.3)';g.fillRect(0,28,480,4);for(const x of m.win){g.fillStyle='#b3e5fc';g.fillRect(x*16,6,28,16);g.fillStyle='#fff';g.fillRect(x*16+13,6,2,16)}}
+ const L=OS();L.filter(o=>o.k=='f'||o.k=='r'||o.n=='籃球場').forEach(o=>{if(o.k=='r')ell(o.x+o.w/2,o.y+o.h/2,o.w/2,o.h/2,o.c);else if(o.k=='f')fr(o.c,o.x,o.y,o.w,o.h);else dObj(o)});
+ const it=L.filter(o=>o.k!='f'&&o.k!='r'&&o.n!='籃球場').map(o=>[o.y+o.h,()=>dObj(o)]);it.push([S.y+8,()=>{if(S.fall){g.save();g.translate(S.x+5,S.y+8);g.rotate(Math.min(S.fall,15)/15*Math.PI/2);g.translate(-S.x-5,-S.y-8)}man(S.x-1,S.y-8,'#ffeb3b',S.fr);if(S.fall)g.restore();txt('你',S.x+5,S.y-10,8,'#ffeb3b')}]);it.sort((a,b)=>a[0]-b[0]).forEach(i=>i[1]());
  const h=hh(),al=OUT()?(h<17?0:h<19?(h-17)*.12:h<6?.38:.38):(h>=19||h<6?.15:0);if(al>0){g.fillStyle=`rgba(10,0,60,${al})`;g.fillRect(0,0,480,320)}
  if(S.go&&!busy&&near()){g.fillStyle='#fff';g.fillRect(S.x-2,S.y-26,14,12);g.fillStyle='#000';g.fillRect(S.x-1,S.y-25,12,10);txt('E',S.x+5,S.y-16,9,'#ffeb3b')}}
 let hc=0;const bar=(l,v,c)=>`<span class=st>${l}<u><s style="width:${v}%;background:${v<=20?'#f44':c}"></s></u></span>`;
 function hud(){if(hc++%6)return;const c=cur(),nx=S.tt.find(c=>c.s>S.t),a=S.tt.filter(c=>c.sat).length;$('#hs').innerHTML=`<b>🕒${clk()}</b>　${PN[S.map]}　小睡 ${(S.nap/60).toFixed(1)}h　💰$${S.m}　出席 ${a}/${S.tt.length}　${S.ur?'<b style=color:#f66>肚子絞痛！</b>':''}<br>${c?'📖 上課中：'+c.n:nx?'⏭ 下一堂 '+tm(nx.s)+' '+nx.n+'（'+nx.r+'）':'今天沒課了'}${S.q?'<br>📌 '+S.q.txt+(S.q.have?'（已取得）':''):''}<br>${bar('學業',S.a,'#4caf50')}${bar('精力',S.e,'#ffeb3b')}${bar('社交',S.c,'#29b6f6')}${bar('SAN',S.s,'#ba68c8')}${bar('飽食',S.f,'#ff9800')}${bar('水分',S.w,'#4fc3f7')}`}
 /* ---------- 主迴圈 ---------- */
-const CB=o=>o.k=='t'?{x:o.x+11,y:o.y+23,w:10,h:8}:o.n=='路燈'?{x:o.x+4,y:o.y+26,w:8,h:6}:o;
+const CB=o=>o.n=='籃球場'?{x:-99,y:-99,w:0,h:0}:o.k=='t'?{x:o.x+11,y:o.y+23,w:10,h:8}:o.n=='路燈'?{x:o.x+4,y:o.y+26,w:8,h:6}:o;
 const hit=(x,y,o)=>x<o.x+o.w&&x+10>o.x&&y<o.y+o.h&&y+8>o.y;
 function mv(a,b){const nx=S.x+a,ny=S.y+b;if(nx<2||nx>468||ny<26||ny>310)return;if(OS().some(o=>'dipet'.includes(o.k)&&hit(nx,ny,CB(o))))return;S.x=nx;S.y=ny}
 function go(a){S.map=a[0];S.x=a[1]*16;S.y=a[2]*16;adv(3);sfx(440,.1);cv.style.opacity=.2;setTimeout(()=>cv.style.opacity=1,120)}
@@ -506,6 +526,8 @@ function tick(dt){adv(dt/3);const k=c=>keys[c],dx=(k('ArrowRight')||k('KeyD')||T
  for(const c of S.tt){if(!c.sat&&!c.pen&&S.t>=c.e){c.pen=1;ch('a',-9);S.miss++}if(!c.w10&&S.t>=c.s-10&&S.t<c.s){c.w10=1;toast(`⏰ 快上課了：〈${c.n}〉${c.r}`)}}
  if(S.ur&&S.t>S.ur){S.ur=0;ch('s',-25);ch('c',-15);ev.push(()=>say('','……來不及了。你的人生出現了一道不能言說的裂痕。'))}
  if(S.map=='class'){const c=cur();if(c&&!c.done){klass(c);return}}
+ {const hz=HRS[S.map];S.kd=S.kd||{};if(hz&&!opn(hz)&&!S.kd[S.map]){S.kd[S.map]=1;closeUp(S.map);return}}
+ if(S.map=='class'&&!cur()){const h=hh();if(h>=18.5&&!S.lk){S.lk=1;lockClass();return}if(h>=17.75&&h<18.5&&!S.eg){S.eg=1;eggClass();return}}
  if(ev.length){ev.shift()();return}
  if(S.t>=24*60&&S.e<20)return end('doze');if(S.t>=26*60)end('night')}
 let last=0;function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(S&&!S.over){if(S.go&&!busy)tick(dt);draw();hud()}requestAnimationFrame(loop)}
