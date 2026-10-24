@@ -9,7 +9,7 @@ body{margin:0;background:#120a2a;color:#fff;font-family:'DotGothic16','Press Sta
 #w{width:min(100vw,960px);padding:6px}
 #hud{display:flex;justify-content:space-between;gap:6px;background:#241552;border:4px solid #ff4fd8;padding:6px;font-size:clamp(12px,2.3vw,18px);line-height:1.6}
 .st{display:inline-flex;align-items:center;gap:3px;margin-right:8px}
-.st u{display:inline-block;width:clamp(40px,8vw,80px);height:10px;background:#000;border:2px solid #fff}
+.st u{display:inline-block;width:clamp(34px,7vw,70px);height:10px;background:#000;border:2px solid #fff}
 .st s{display:block;height:100%}
 button{font:inherit;background:#ffeb3b;color:#000;border:3px solid #fff;padding:6px 10px;cursor:pointer;margin:2px}
 #stg{position:relative;margin-top:6px;border:4px solid #00e5ff;aspect-ratio:3/2;background:#000;overflow:hidden}
@@ -34,20 +34,27 @@ table{margin:8px auto;border-collapse:collapse}td,th{border:2px solid #fff;paddi
 body,button,#ctl{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
 button{touch-action:manipulation}
 #ctl{display:none;justify-content:space-between;align-items:center;padding:12px 8px 6px;touch-action:none}
-#pd{display:grid;grid-template:repeat(3,54px)/repeat(3,54px);gap:3px}
-#pd button{padding:0;margin:0;font-size:22px}
 #rc{display:flex;gap:16px;align-items:center}
 #ab,#rn{width:78px;height:78px;border-radius:50%;font-size:26px;margin:0;padding:0}
 #rn{width:62px;height:62px;font-size:17px}
 @media(pointer:coarse){#ctl{display:flex}}
+#hb{display:flex;flex-wrap:wrap;gap:2px;align-content:flex-start;justify-content:flex-end}#hb button{margin:1px;padding:3px 7px;font-size:clamp(11px,2.4vw,16px)}
+@media(max-width:640px){#hud{flex-direction:column;font-size:12px;line-height:1.45;padding:4px}#hb{justify-content:flex-start}.st{margin-right:5px}}
+#joy{position:relative;width:150px;height:150px;border-radius:50%;background:rgba(40,35,35,.88);border:6px solid rgba(255,255,255,.14);touch-action:none}
+#joy b{position:absolute;color:#9a9a9a;font-size:15px;font-weight:400;pointer-events:none}
+#jk{position:absolute;width:64px;height:64px;left:36px;top:36px;border-radius:50%;background:radial-gradient(#fff 30%,#f3d7dc);box-shadow:0 2px 8px #000a;pointer-events:none}
+#bn{position:absolute;left:0;right:0;top:26%;text-align:center;font-size:clamp(30px,10vw,72px);line-height:1.15;color:#ffeb3b;text-shadow:3px 3px 0 #000,-2px -2px 0 #c2185b,2px -2px 0 #c2185b;opacity:0;pointer-events:none;z-index:6;white-space:nowrap}
+#bn small{display:block;font-size:.34em;color:#fff;text-shadow:2px 2px 0 #000;margin-top:6px}
+#bn.show{animation:bnA 2.8s ease-out}
+@keyframes bnA{0%{opacity:0;transform:scale(.5)}12%{opacity:1;transform:scale(1.15)}22%{transform:scale(1)}78%{opacity:1}100%{opacity:0;transform:translateY(-14px)}}
 </style></head><body>
 <div id="w">
-<div id="hud"><div id="hs"></div><div id="hb"><button id="bt">📅課表(T)</button><button id="bp">📱手機</button><button id="br">🔄重開(R)</button></div></div>
-<div id="stg"><canvas id="cv"></canvas><div id="ts"></div><div id="dlg"></div>
+<div id="hud"><div id="hs"></div><div id="hb"><button id="bt">📅課表</button><button id="bp">📱手機</button><button id="bz">⏸暫停</button><button id="br">🔄重開</button></div></div>
+<div id="stg"><canvas id="cv"></canvas><div id="ts"></div><div id="bn"></div><div id="dlg"></div>
 <div id="ov"><div class="box"><h2>大學生的一天</h2>
 <p>課表每次隨機。現實 3 秒 ＝ 遊戲 1 分鐘。<br>方向鍵 / WASD 移動 · Shift 奔跑（耗體力）· E 或空白鍵 互動 · T 課表 · R 重新開局<br>學業、精力、社交、SAN 值、飽食、水分、金錢都要顧——某些數值爆表或歸零，今天就會提早結束。<br>課還是要上。夜裡教室會鎖門，健身房、圖書館、宵夜店要騎車去。</p>
-<button id="sb">開始這一天</button></div></div></div>
-<div id="ctl"><div id="pd"></div><div id="rc"><button id="rn">跑</button><button id="ab">E</button></div></div>
+<button id="sb">開始這一天</button><button id="cont" style="display:none">繼續上次存檔</button><button id="gal">🏆 結局圖鑑</button></div></div></div>
+<div id="ctl"><div id="joy"><b style="top:6px;left:67px">▲</b><b style="bottom:6px;left:67px">▼</b><b style="left:8px;top:64px">◀</b><b style="right:8px;top:64px">▶</b><div id="jk"></div></div><div id="rc"><button id="rn">跑</button><button id="ab">E</button></div></div>
 </div>
 <script>
 const $=s=>document.querySelector(s),R=Math.random,pk=a=>a[R()*a.length|0],cl=(v,a,b)=>Math.max(a,Math.min(b,v)),pad=n=>String(n|0).padStart(2,'0');
@@ -64,6 +71,7 @@ const clk=()=>pad(S.t/60%24)+':'+pad(S.t%60);
 const cur=()=>S.tt.find(c=>S.t>=c.s&&S.t<c.e);
 const hh=()=>S.t/60%24,night=()=>hh()>=18.5||hh()<6;
 const opn=r=>{const h=hh();return r[1]>24?(h>=r[0]||h<r[1]-24):(h>=r[0]&&h<r[1])};
+function banner(t,sub){const b=$('#bn');b.innerHTML=t+(sub?`<small>${sub}</small>`:'');b.classList.remove('show');void b.offsetWidth;b.classList.add('show');sfx(880,.14);setTimeout(()=>sfx(660,.18),170)}
 function toast(t){ts.textContent=t;ts.style.opacity=1;clearTimeout(tt_);tt_=setTimeout(()=>ts.style.opacity=0,3600)}
 /* ---------- 對話 / 選擇 ---------- */
 function dl(n,t,o){busy++;return new Promise(r=>{cb={r,ch:!!o};dlg.innerHTML=`<b>${n||''}</b><p>${t}</p>`+(o?o.map((x,i)=>`<button data-i="${i}">${i+1}. ${x}</button>`).join(''):'<i>▼</i>');dlg.style.display='block'})}
@@ -77,14 +85,43 @@ function timing(h){busy++;return new Promise(r=>{const w=.2,z=.15+R()*.55,sp=.01
 const stop=()=>{clearInterval(iv);kd=null;ov.style.display='none';busy--;const ok=p>=z&&p<=z+w;sfx(ok?880:150,.15);r(ok)};
 $('#go').onpointerdown=stop;kd=e=>{if(e.key==' ')stop()};
 iv=setInterval(()=>{p+=d*sp;if(p>=1||p<=0)d=-d;p=cl(p,0,1);$('#mk').style.left=p*100+'%'},16)})}
-function aim(h,n){busy++;return new Promise(r=>{let hit=0,i=0,tm;ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div id=fd></div><p id=ai></p></div>`;const fd=$('#fd');
-const nx=()=>{clearTimeout(tm);fd.innerHTML='';if(i++>=n){ov.style.display='none';busy--;return r(hit)}$('#ai').textContent=`命中 ${hit} / ${n}`;const b=document.createElement('b');b.className='tg';b.style.left=R()*88+'%';b.style.top=R()*80+'%';b.onpointerdown=()=>{hit++;sfx(900,.04);nx()};fd.append(b);tm=setTimeout(nx,1000)};nx()})}
 function mjg(b){busy++;return new Promise(r=>{const sv=['萬','筒','條'],mk=()=>({v:1+R()*9|0,s:pk(sv)});let me=[...Array(5)].map(mk),op=[...Array(5)].map(mk),w=0,l=0,n=0,msg='牌局開始！每輪挑一張牌，和對手比大小。';
 const draw=()=>{ov.style.display='flex';ov.innerHTML=`<div class=box><h2>🀄 麻將 $${b}</h2><p>你 ${w} : ${l} 對手</p><p>${msg}</p><div>${me.map((t,i)=>t?`<button class=tile data-i=${i}>${t.v}<br>${t.s}</button>`:'').join('')}</div></div>`;
 ov.querySelectorAll('.tile').forEach(bt=>bt.onclick=()=>{const m=me[+bt.dataset.i];me[+bt.dataset.i]=0;const j=pk([...op.keys()].filter(k=>op[k])),o=op[j];op[j]=0;n++;sfx(500,.05);msg=`你 ${m.v}${m.s} vs 對手 ${o.v}${o.s}：`+(m.v>o.v?(w++,'你贏這輪'):m.v<o.v?(l++,'你輸這輪'):'平手');n==5?fin():draw()})};
 const fin=()=>{const net=w==5?b*3:w>l?b:w<l?-b:0;ov.innerHTML=`<div class=box><h2>🀄 牌局結束 ${w}:${l}</h2><p>${msg}</p><p>${net>0?'你贏了 $'+net:net<0?'你輸了 $'+-net:'平手，沒輸沒贏'}</p><button id=ok>起身離桌</button></div>`;$('#ok').onclick=()=>{ov.style.display='none';busy--;r(net)}};draw()})}
 const QZ=[['∫ 2x dx = ?',['x²+C','2','x+C'],0],['F = ?',['ma','mc²','mv'],0],['Python 中 len([1,2,3]) 的結果是？',['2','3','4'],1],['The past tense of "go" is?',['goed','went','gone'],1],['教授剛剛講的重點是？',['第三章','第五章','他剛剛沒講'],2],['布林代數 1 OR 1 = ?',['2','1','0'],1],['下列何者最不可能是考試範圍？',['課本','上課內容','教授的午餐'],2]];
-async function quiz(att){let ok=0;for(const x of [...QZ].sort(()=>R()-.5).slice(0,3)){let rm=att>0?1:0;const o=x[1].map((t,i)=>[t,i]).filter(v=>v[1]==x[2]||!(rm-->0));const k=await ask('📝 '+x[0],o.map(v=>v[0]),'小考');if(o[k][1]==x[2])ok++}return ok}
+
+const QS={'微積分':[['d/dx (x²) = ?',['2x','x','x²'],0],['lim x→0 sin x / x = ?',['0','1','∞'],1],['∫ 1/x dx = ?',['ln|x|+C','x²','1/x²'],0]],'線性代數':[['單位矩陣乘以任何矩陣 A 等於？',['0','A','I²'],1],['矩陣可逆的條件是？',['行列式不為 0','全是正數','是方陣就行'],0]],'統計學':[['標準常態分布的平均數是？',['0','1','100'],0],['樣本越大，抽樣誤差通常會？',['變大','變小','不變'],1]],'普通物理':[['自由落體忽略空氣阻力，加速度約是？',['9.8 m/s²','98 m/s²','1 m/s²'],0],['能量的單位是？',['牛頓','焦耳','瓦特'],1]],'電路學':[['歐姆定律是？',['V = IR','F = ma','E = mc²'],0],['電阻串聯後總電阻會？',['變大','變小','不變'],0]],'程式設計':[['Python 中 print(2**3) 輸出？',['6','8','9'],1],['陣列索引通常從幾開始？',['0','1','-1'],0]],'大一英文':[['"affect" 主要的詞性是？',['動詞','名詞','介系詞'],0],['"I have lived here ___ 2020." 填？',['since','for','from'],0]],'國文':[['「床前明月光」的下一句是？',['疑是地上霜','舉頭望明月','低頭思故鄉'],0],['《論語》是記錄誰的言行？',['孔子','孟子','老子'],0]],'經濟學原理':[['需求法則：價格上升，需求量通常？',['下降','上升','不變'],0],['機會成本指的是？',['放棄的次佳選擇','花掉的錢','利息'],0]],'心理學導論':[['提出古典制約的是？',['巴夫洛夫','佛洛伊德','皮亞傑'],0],['「潛意識」是誰的核心概念？',['佛洛伊德','巴夫洛夫','華生'],0]],'通識：火鍋與哲學':[['火鍋哲學：鍋中的「我」是？',['食材','思考的人','湯底'],1],['蘇格拉底主張？',['認識你自己','多吃火鍋','跳過考試'],0]],'體育':[['籃球比賽每隊場上有幾人？',['5','6','7'],0],['運動前最重要的是？',['暖身','喝汽水','睡覺'],0]]};
+const KW={'微積分':['極限','微分','∫ 2x dx','連鎖律','這很重要'],'線性代數':['矩陣','行列式','特徵值','這很重要'],'統計學':['平均數','標準差','常態分布','期中範圍'],'普通物理':['F = ma','動量守恆','能量','考試會考'],'電路學':['V = IR','克希荷夫','電容','記起來'],'程式設計':['迴圈','陣列','Python','遞迴'],'大一英文':['現在完成式','單字','片語','記起來'],'國文':['古文','修辭','作者生平','考試會考'],'經濟學原理':['供給需求','機會成本','均衡','重點！'],'心理學導論':['制約','潛意識','實驗','考試會考'],'通識：火鍋與哲學':['湯底','存在','蘇格拉底','重點！'],'體育':['暖身','配速','體能測驗','集合！']};
+const PRO={'微積分':[1,1,1],'普通物理':[1,0,1],'程式設計':[0,0,0],'大一英文':[1,1,1],'體育':[0,0,1],'通識：火鍋與哲學':[0,0,0],'線性代數':[1,1,0],'經濟學原理':[0,1,1],'電路學':[1,0,0],'統計學':[0,1,1],'國文':[0,0,1],'心理學導論':[1,0,0]};
+const profOf=c=>{const a=PRO[c.n]||[1,1,1];return{phone:a[0],sleep:a[1],roll:a[2],eye:a[0]+a[1]+a[2]}};
+async function quiz(att,sb){let ok=0;for(const x of [...(QS[sb]||[]).sort(()=>R()-.5).slice(0,2),...[...QZ].sort(()=>R()-.5)].slice(0,3)){let rm=att>0?1:0;const o=x[1].map((t,i)=>[t,i]).filter(v=>v[1]==x[2]||!(rm-->0)).sort(()=>R()-.5);const k=await ask('📝 '+x[0],o.map(v=>v[0]),'小考');if(o[k][1]==x[2])ok++}return ok}
+function sneakG(eye){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>🤫 偷溜出教室</h2><canvas id=sg width=480 height=270 style="width:100%;image-rendering:pixelated;touch-action:none"></canvas><p>按住按鈕（或空白鍵）往後門爬，教授一轉過來就要立刻放開！</p><button id=sgb style="width:70%;height:56px;font-size:1.3em">按住：爬！</button></div>';
+const cv2=$('#sg'),x=cv2.getContext('2d'),b=$('#sgb');x.font='18px DotGothic16,sans-serif';x.textAlign='center';let hold=0,p=0,fr=0,st=0,pt=70+R()*60|0,msg='',caught=0,flash=0,dn=0;
+const on=()=>hold=1,off=()=>hold=0,ku=e=>{if(e.key==' ')off()};b.onpointerdown=on;b.onpointerup=b.onpointerleave=b.onpointercancel=off;kd=e=>{if(e.key==' ')on()};document.addEventListener('keyup',ku);
+const fin=ok=>{if(dn)return;dn=1;clearInterval(iv);document.removeEventListener('keyup',ku);kd=null;ov.style.display='none';busy--;r(ok)};
+const iv=setInterval(()=>{fr++;pt--;cv2.dataset.st=st;
+ if(pt<=0){if(st==0){st=1;pt=30;msg='三……二……一……'}else if(st==1){st=2;pt=40+eye*10+R()*25|0;msg='教授轉過來了！'}else{st=0;pt=Math.max(35,120-eye*18)+R()*60|0;msg=''}}
+ if(!caught){if(hold&&st!=2)p+=.0042;if(hold&&st==2){caught=1;flash=30;sfx(150,.3,'sawtooth');setTimeout(()=>fin(false),700)}else if(p>=1){sfx(880,.2);fin(true)}else if(fr>700){fin(false)}}
+ if(flash>0)flash--;
+ x.fillStyle='#c5b08f';x.fillRect(0,0,480,270);x.fillStyle='#2e7d32';x.fillRect(100,6,280,14);x.fillStyle='#8d6e63';x.fillRect(190,26,100,16);
+ for(let a=0;a<3;a++)for(let c=0;c<5;c++){x.fillStyle='#a1887f';x.fillRect(40+c*80,95+a*40,50,18);x.fillStyle='#6d4c41';x.fillRect(40+c*80,113+a*40,50,3)}
+ x.fillStyle='#ffb74d';x.fillRect(410,244,60,26);x.fillStyle='#000';x.fillText('後門',440,262);
+ if(st==2){x.fillStyle='rgba(255,0,0,.2)';x.beginPath();x.moveTo(240,58);x.lineTo(10,260);x.lineTo(470,260);x.fill()}
+ x.fillStyle='#5d4037';x.fillRect(226,44,28,18);x.fillStyle=st==0?'#3e2723':'#ffcc99';x.beginPath();x.arc(240,38,11,0,7);x.fill();if(st){x.fillStyle=st==2?'#d50000':'#000';x.fillRect(235,40,3,3);x.fillRect(242,40,3,3)}
+ const px=60+p*360,py=212+p*30;x.fillStyle='#ffeb3b';x.beginPath();x.arc(px,py-8,7,0,7);x.fill();x.fillRect(px-8,py-2,16,8);x.fillStyle=hold&&st!=2?'#fff':'#0000';if(hold)x.fillRect(px-10,py+6,20,2);
+ x.fillStyle='#000';x.fillRect(20,252,380,8);x.fillStyle='#4caf50';x.fillRect(20,252,380*p,8);
+ x.lineWidth=3;x.strokeStyle='#000';x.fillStyle=st==2?'#ff5252':st==1?'#ffeb3b':'#a5d6a7';const tx=st==0?'教授在寫黑板':msg;x.strokeText(tx,240,150);x.fillText(tx,240,150);
+ if(flash>0){x.fillStyle=`rgba(255,0,0,${flash/60})`;x.fillRect(0,0,480,270);x.fillStyle='#fff';x.fillText('被抓到了！',240,120)}},16)})}
+function wipeBoard(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>🧽 幫教授擦黑板</h2><canvas id=wb width=480 height=270 style="width:100%;image-rendering:pixelated;touch-action:none;cursor:crosshair"></canvas><p id=wp>按住拖曳，把整塊黑板擦乾淨：0%</p></div>';
+const cv2=$('#wb'),x=cv2.getContext('2d'),cn=document.createElement('canvas');cn.width=480;cn.height=270;const c2=cn.getContext('2d');c2.strokeStyle='#fff';c2.fillStyle='#fff';c2.lineWidth=2;c2.font='22px DotGothic16,sans-serif';
+['∫ x² dx = x³/3 + C','F = ma','E = mc²','重點！！','期中範圍：第 1~5 章','lim sin x / x = 1','點名單：……','a² + b² = c²'].forEach((t,i)=>c2.fillText(t,20+(i%2)*235,40+Math.floor(i/2)*60));
+for(let i=0;i<12;i++){c2.beginPath();c2.moveTo(R()*480,R()*270);c2.lineTo(R()*480,R()*270);c2.stroke()}
+const COLS=16,ROWS=9,G=new Set();let dn=0,fin=0,mx=-99,my=-99;
+const draw=()=>{x.fillStyle='#2e7d32';x.fillRect(0,0,480,270);x.drawImage(cn,0,0);x.fillStyle='#8d6e63';x.fillRect(mx-18,my-8,36,16);x.fillStyle='#ffd54f';x.fillRect(mx-18,my+4,36,4)};
+const pos=e=>{const b=cv2.getBoundingClientRect();mx=(e.clientX-b.left)/b.width*480;my=(e.clientY-b.top)/b.height*270};
+const erase=()=>{c2.globalCompositeOperation='destination-out';c2.beginPath();c2.arc(mx,my,20,0,7);c2.fill();c2.globalCompositeOperation='source-over';for(let a=0;a<COLS;a++)for(let b=0;b<ROWS;b++)if(Math.hypot((a+.5)*480/COLS-mx,(b+.5)*270/ROWS-my)<24)G.add(a*ROWS+b);const pr=G.size/(COLS*ROWS);$('#wp').textContent='按住拖曳，把整塊黑板擦乾淨：'+Math.min(100,pr*100|0)+'%';if(pr>=.9&&!fin){fin=1;sfx(880,.15);setTimeout(()=>{ov.style.display='none';busy--;r()},500)}};
+cv2.onpointerdown=e=>{dn=1;try{cv2.setPointerCapture(e.pointerId)}catch(z){}pos(e);erase();draw()};cv2.onpointermove=e=>{pos(e);if(dn&&!fin)erase();draw()};cv2.onpointerup=cv2.onpointercancel=()=>dn=0;draw()})}
 function react(h,lim){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box><h2>${h}</h2><div id=rb style="height:90px;background:#b71c1c;margin:10px 0;line-height:90px;font-size:1.4em">等……</div><button id=rg>按！</button></div>`;let t0=0,done=0;const fin=ok=>{if(done)return;done=1;clearTimeout(tm);kd=null;ov.style.display='none';busy--;sfx(ok?880:150,.15);r(ok)};
 const tm=setTimeout(()=>{t0=Date.now();$('#rb').style.background='#2e7d32';$('#rb').textContent='現在！'},1200+R()*2000);const hitf=()=>fin(t0>0&&Date.now()-t0<lim);$('#rg').onpointerdown=hitf;kd=e=>{if(e.key==' ')hitf()}})}
 function pluck(f){try{AC=AC||new AudioContext();const sr=AC.sampleRate,N=Math.round(sr/f),L=sr*1.2|0,b=AC.createBuffer(1,L,sr),d=b.getChannelData(0);for(let i=0;i<N;i++)d[i]=R()*2-1;for(let i=N;i<L;i++)d[i]=(d[i-N]+d[i-N+1])/2*.996;const s=AC.createBufferSource(),gn=AC.createGain();gn.gain.value=.35;s.buffer=b;s.connect(gn);gn.connect(AC.destination);s.start()}catch(e){}}
@@ -116,13 +153,13 @@ const iv=setInterval(()=>{
  x.fillStyle='#e65100';x.beginPath();x.arc(bx,by,6,0,7);x.fill();x.strokeStyle='#000';x.lineWidth=1;x.beginPath();x.arc(bx,by,6,0,7);x.moveTo(bx-6,by);x.lineTo(bx+6,by);x.moveTo(bx,by-6);x.lineTo(bx,by+6);x.stroke();
  x.fillStyle='#000';x.textAlign='left';x.fillText(`第 ${fl?shots:shots+1}/5 球　進球 ${made}　${msg}`,8,16)},16)})}
 const FV={n:'VALORANT（練槍場）',tip:'點擊射擊，爆頭一槍致命；按 R 換彈。敵人探頭時要搶先開槍！',am:13,rl:40,auto:0,dmg:25,sc:40,sd:45,sp:55,mx:2,t:30,mode:0,eh:2,life:100,ec:'#42a5f5'},FA={n:'APEX（亂戰）',tip:'按住滑鼠連射，槍口會往上跳；按 R 換彈。敵人會橫向移動。',am:30,rl:50,auto:1,dmg:8,sc:45,sd:60,sp:70,mx:3,t:30,mode:1,eh:3,life:260,ec:'#ef5350'};
-function fps(cf){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><h2>${cf.n}</h2><canvas id=fc2 width=480 height=270 style="width:100%;image-rendering:pixelated;cursor:crosshair;touch-action:none"></canvas><p>${cf.tip}</p></div>`;
+function fps(cf){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><h2>${cf.n}</h2><canvas id=fc2 width=480 height=270 style="width:100%;image-rendering:pixelated;cursor:crosshair;touch-action:none"></canvas><p>${cf.tip}</p><button id=fr2>🔄 換彈（R）</button></div>`;
 const cv2=$('#fc2'),x=cv2.getContext('2d');x.font='13px DotGothic16,sans-serif';let mx=240,my=135,dn=0,fr=0,hp=100,kills=0,ammo=cf.am,rl=0,en=[],fl=0,rec=0,dm=0;
 const pos=e=>{const b=cv2.getBoundingClientRect();mx=(e.clientX-b.left)/b.width*480;my=(e.clientY-b.top)/b.height*270};
 const shoot=()=>{if(rl)return;if(ammo<=0){rl=cf.rl;return}ammo--;sfx(cf.auto?500:350,.05,'square',.05);fl=3;const jx=mx+(R()-.5)*rec*2,jy=my-rec*(cf.auto?1:.4)+(R()-.5)*rec;rec=Math.min(cf.auto?30:14,rec+(cf.auto?3:6));
  for(const o of en.filter(o=>o.hp>0).sort((a,b)=>b.s-a.s)){if(Math.hypot(jx-o.x,jy-(o.y-32*o.s))<7*o.s+2){o.hp-=2;break}if(Math.abs(jx-o.x)<9*o.s&&jy>o.y-26*o.s&&jy<o.y){o.hp-=1;break}}
  en.forEach(o=>{if(o.hp<=0&&!o.dd){o.dd=1;kills++;sfx(900,.08)}})};
-cv2.onpointermove=pos;cv2.onpointerdown=e=>{pos(e);dn=1;if(!cf.auto)shoot()};cv2.onpointerup=()=>dn=0;kd=e=>{if(e.key=='r'||e.key=='R')rl=cf.rl};
+cv2.onpointermove=pos;cv2.onpointerdown=e=>{pos(e);dn=1;if(!cf.auto)shoot()};cv2.onpointerup=()=>dn=0;kd=e=>{if(e.key=='r'||e.key=='R')rl=cf.rl};$('#fr2').onclick=()=>{if(!rl)rl=cf.rl};
 const iv=setInterval(()=>{fr++;
  if(fr%cf.sp==0&&en.filter(o=>o.hp>0).length<cf.mx){const s=cf.mode?.6+R()*.4:.9+R()*.2,cx=cf.mode?100+R()*280:pk([110,240,370]);en.push({hp:cf.eh,s,x:cx,cx,y:cf.mode?190+R()*20:200,ph:R()*6,life:cf.life,sh:cf.sd+R()*20|0})}
  rec=Math.max(0,rec-.6);if(dn&&cf.auto&&fr%4==0)shoot();if(rl&&--rl==0)ammo=cf.am;if(fl>0)fl--;if(dm>0)dm--;
@@ -150,13 +187,13 @@ const iv=setInterval(()=>{fr++;if(fr%16==0)ob.push({l:R()*3|0,y:-34,t:R()<.55?0:
  if(hurt>0){hurt--;c.fillStyle='rgba(255,0,0,.25)';c.fillRect(0,0,300,300)}
  c.fillStyle='#fff';c.font='14px sans-serif';c.textAlign='left';c.fillText(`撞到 ${cr}　${Math.ceil(10-fr/30)}s`,36,16);
  if(fr>=300){clearInterval(iv);kd=null;ov.style.display='none';busy--;r(cr)}},33)})}
-function brawl(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>荒野亂鬥 Lite（盜版）</h2><p>點擊畫面往該方向開槍，方向鍵移動。30 秒，擊倒越多越好</p><canvas id=bc width=320 height=200 style="width:100%;max-width:560px;image-rendering:pixelated;cursor:crosshair"></canvas></div>';const cv2=$('#bc'),c=cv2.getContext('2d');c.font='12px sans-serif';let P={x:160,y:100},en=[],bl=[],k=0,hp=3,fr=0;
+function brawl(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><h2>荒野亂鬥 Lite（盜版）</h2><p>點擊畫面往該方向開槍，方向鍵移動。30 秒，擊倒越多越好</p><canvas id=bc width=320 height=200 style="width:100%;max-width:560px;image-rendering:pixelated;cursor:crosshair;touch-action:none"></canvas><div style="margin-top:6px">'+[['◀','ArrowLeft'],['▲','ArrowUp'],['▼','ArrowDown'],['▶','ArrowRight']].map(a=>`<button data-b=${a[1]} style="width:56px;height:46px">${a[0]}</button>`).join('')+'</div></div>';const cv2=$('#bc'),c=cv2.getContext('2d');c.font='12px sans-serif';let P={x:160,y:100},en=[],bl=[],k=0,hp=3,fr=0;
 cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect(),tx=(e.clientX-b.left)/b.width*320,ty=(e.clientY-b.top)/b.height*200,d=Math.hypot(tx-P.x,ty-P.y)||1;bl.push({x:P.x,y:P.y,vx:(tx-P.x)/d*6,vy:(ty-P.y)/d*6});sfx(700,.04)};
-kd=e=>{const s=5;if(e.key=='ArrowLeft'||e.key=='a')P.x-=s;if(e.key=='ArrowRight'||e.key=='d')P.x+=s;if(e.key=='ArrowUp'||e.key=='w')P.y-=s;if(e.key=='ArrowDown'||e.key=='s')P.y+=s;P.x=cl(P.x,8,312);P.y=cl(P.y,8,192)};
-const iv=setInterval(()=>{fr++;if(fr%25==0)en.push({x:R()<.5?0:320,y:R()*200,h:2});
+const bk={};ov.querySelectorAll('[data-b]').forEach(b=>{b.onpointerdown=()=>bk[b.dataset.b]=1;b.onpointerup=b.onpointerleave=b.onpointercancel=()=>bk[b.dataset.b]=0});
+const iv=setInterval(()=>{fr++;{const kk=c=>keys[c]||bk[c],s=3;if(kk('ArrowLeft')||kk('KeyA'))P.x-=s;if(kk('ArrowRight')||kk('KeyD'))P.x+=s;if(kk('ArrowUp')||kk('KeyW'))P.y-=s;if(kk('ArrowDown')||kk('KeyS'))P.y+=s;P.x=cl(P.x,8,312);P.y=cl(P.y,8,192)}if(fr%25==0)en.push({x:R()<.5?0:320,y:R()*200,h:2});
 en.forEach(o=>{const d=Math.hypot(P.x-o.x,P.y-o.y)||1;o.x+=(P.x-o.x)/d*1.1;o.y+=(P.y-o.y)/d*1.1;if(d<10){o.h=0;hp--;sfx(120,.2,'sawtooth')}});
 bl.forEach(b=>{b.x+=b.vx;b.y+=b.vy;en.forEach(o=>{if(o.h>0&&Math.hypot(b.x-o.x,b.y-o.y)<10){o.h--;b.x=-99;if(!o.h){k++;sfx(900,.06)}}})});bl=bl.filter(b=>b.x>0&&b.x<320&&b.y>0&&b.y<200);en=en.filter(o=>o.h>0);
-c.fillStyle='#6d4c41';c.fillRect(0,0,320,200);c.fillStyle='#5d4037';for(let i=0;i<320;i+=32)c.fillRect(i,(i*7)%200,10,6);c.fillStyle='#ffeb3b';c.fillRect(P.x-6,P.y-6,12,12);c.fillStyle='#e53935';en.forEach(o=>c.fillRect(o.x-6,o.y-6,12,12));c.fillStyle='#fff';bl.forEach(b=>c.fillRect(b.x-2,b.y-2,4,4));c.fillText('♥'.repeat(hp)+'  擊倒 '+k+'  '+Math.ceil(30-fr/30)+'s',6,14);
+c.fillStyle='#6d4c41';c.fillRect(0,0,320,200);c.fillStyle='#5d4037';for(let i=0;i<320;i+=32)c.fillRect(i,(i*7)%200,10,6);c.fillStyle='#ffeb3b';c.fillRect(P.x-6,P.y-6,12,12);c.fillStyle='#e53935';en.forEach(o=>c.fillRect(o.x-6,o.y-6,12,12));c.fillStyle='#fff';bl.forEach(b=>c.fillRect(b.x-2,b.y-2,4,4));c.fillText('♥'.repeat(Math.max(0,hp))+'  擊倒 '+k+'  '+Math.ceil(30-fr/30)+'s',6,14);
 if(hp<=0||fr>=900){clearInterval(iv);kd=null;ov.style.display='none';busy--;r(k)}},33)})}
 function aiVid(){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML='<div class=box style="padding:6px"><canvas id=vc width=270 height=360 style="width:min(60%,270px);image-rendering:pixelated"></canvas><p>▶ 12.3 萬次觀看　（點一下滑走）</p></div>';const c=$('#vc').getContext('2d'),cap=['【AI 生成】鯊魚穿上球鞋，走進便利商店','它買了一杯珍奶，但它沒有嘴巴','突然，高鐵便當開始唱歌','（劇情沒有連貫，但你停不下來）','最後，所有東西融化成一隻貓'];let fr=0,en=0;const fin=()=>{if(en)return;en=1;clearInterval(iv);ov.style.display='none';busy--;r()};$('#vc').onpointerdown=fin;
 const iv=setInterval(()=>{fr++;const t=fr/30;c.fillStyle=`hsl(${fr*4%360},60%,35%)`;c.fillRect(0,0,270,360);for(let i=0;i<6;i++){c.fillStyle=`hsl(${(fr*7+i*50)%360},80%,60%)`;const x=135+Math.sin(t*2+i)*90,y=150+Math.cos(t*3+i*2)*70,s=30+Math.sin(t*5+i)*14;c.fillRect(x-s/2,y-s/2,s,s*1.4)}
@@ -290,6 +327,9 @@ shelf:async()=>{adv(8);ch('a',1);if(S.q&&S.q.get=='shelf'&&!S.q.have){S.q.have=1
 copy:async()=>{if(S.m<2)return say('','你連兩塊錢都沒有。');ch('m',-2);adv(3);ch('a',1);await say('','你印了一份筆記。紙還是熱的。')},
 snk:async()=>{const m=[['鹽酥雞',80,32,0],['臭豆腐',60,26,0],['滷味',70,28,3],['冰紅茶',25,0,22]];const k=await ask('老闆：「要什麼？」',m.map(x=>x[0]+' $'+x[1]).concat('不用'));if(k>3)return;if(S.m<m[k][1])return say('','錢不夠。老闆看你的眼神很同情。');ch('m',-m[k][1]);adv(20);eat(m[k][2],m[k][3]);if(k<3)S.snk++;ch('s',6);if(S.q&&S.q.get=='snack')S.q.have=1;await say('','深夜的香氣，最讓人無法抗拒。')},
 mj:async()=>{const k=await ask('一桌三缺一。要玩嗎？',['小玩 $100','大玩 $300','不了']);if(k==2)return;const b=k?300:100;if(S.m<b)return say('老闆娘','「沒錢別上桌喔～」');await fp('mj','你坐了下來。洗牌聲嘩啦嘩啦。');const r=await mjg(b);adv(90);S.mj+=r;ch('m',r);ch('s',r>0?8:r<0?-8:0);ch('e',-6);if(r>=300)jg([784,988,1175,1568])}};
+const _food=A.food,_cvs=A.cvs;
+A.food=async()=>{const k=await ask('老闆：「要吃什麼？」',['點餐','免費加飯／喝湯（今天老闆心情好）','先不要']);if(k==0)return _food();if(k==1){if((S.fd||0)>=2)return say('老闆','「同學，白飯也是有限量的。」');S.fd=(S.fd||0)+1;adv(10);eat(15,6);await say('老闆','「吃吧，不要說出去。」')}};
+A.cvs=async()=>{const k=await ask('店員：「需要什麼？」',['買東西','打工兩小時（+$200，會累）','算了']);if(k==0)return _cvs();if(k==1){if((S.work||0)>=2)return say('店長','「今天排班已經滿囉，明天請早。」');if(S.e<25)return say('','你累得連掃條碼都掃不準了。');S.work=(S.work||0)+1;await say('','你穿上制服站上收銀台……');adv(120);ch('m',200);ch('e',-18);ch('s',-2);ch('f',-8);await say('店長','「辛苦了。薪水 $200，拿去吧。」')}};
 async function phone(){if(busy)return;const k=await ask('📱 要做什麼？',['滑 IG','荒野亂鬥 Lite','看群組訊息','收起來']);if(k==3)return;S.ph++;
  if(k==0){if(R()<.4){await say('IG','你點開了一支「AI 生成」的影片……');await aiVid();S.ai++;ch('s',R()<.5?6:-5);ch('e',-2);adv(20)}else{const p=pk([['有人曬出了你沒被邀請的聚餐。',-4],['一支貓咪跌倒的影片，你重播了十次。',6],['前任的限時動態。你退出，又點進去。',-6],['某網紅分享「早起的十個好處」，發文時間是中午。',3],['同學的 po 文：「又是被作業追殺的一天。」',1]]);await say('IG',p[0]);ch('s',p[1]);ch('c',1);adv(30)}}
  if(k==1){adv(30);const n=await brawl();if(n>=8){ch('s',8);await say('',`擊倒 ${n} 隻！獎盃 +8，成就感 +100。`)}else{ch('s',-5);await say('',`只擊倒 ${n} 隻。你被盜版怪物追殺了整場。`)}}
@@ -311,29 +351,28 @@ async()=>{if(!night()||!OUT())return;await say('','背後傳來急促的腳步�
 async()=>{await say('📱','學姊：「考古題更新了，需要的話跟我說。」')},
 async()=>{if(S.map=='dorm')return;await say('📱','手機只剩 5% 的電了。');ch('s',-3)},
 async()=>{await say('📱','校園廣播：「請遺失一隻左腳拖鞋的同學，前往學務處。」');ch('s',2)}];
-function hr(h){S.ow=Math.max(0,S.ow-5);if(S.s<70)ch('s',S.s<40?2:1);ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
+function hr(h){setTimeout(save,0);S.ow=Math.max(0,S.ow-5);if(S.s<70)ch('s',S.s<40?2:1);ch('f',-6);ch('w',-7);ch('e',(S.f<=0||S.w<=0)?-5:-1.5);S.wz=S.w<=0?S.wz+1:0;S.fz=S.f<=0?S.fz+1:0;if(S.inC)return;
  if(h==12)toast('中午了。學餐那邊開始排隊了。');if(h==24)toast('已經午夜了……');if(S.f<25&&R()<.6)toast('你的肚子發出了不祥的叫聲。');if(S.w<25&&R()<.6)toast('喉嚨乾得快冒煙了。');if(R()<.3)ev.push(pk(EV))}
 function adv(m){const o=S.t;S.t+=m;for(let h=Math.floor(o/60)+1;h<=Math.floor(S.t/60);h++)hr(h)}
 /* ---------- 上課 ---------- */
-function classGame(c,d){busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><canvas id=cg width=480 height=270 style="width:100%;image-rendering:pixelated"></canvas><p id=ci style="margin:4px">黑板上冒出重點時，點它來抄筆記（空白鍵也行）。教授轉身才敢偷懶，轉頭前會有預兆。</p><div><button data-m=0>1 聽課抄筆記</button><button data-m=1>2 偷滑手機</button><button data-m=2>3 趴下偷睡</button><button data-m=3>4 溜出教室</button></div></div>`;
+function classGame(c,d){const PF=profOf(c);busy++;return new Promise(r=>{ov.style.display='flex';ov.innerHTML=`<div class=box style="padding:6px"><canvas id=cg width=480 height=270 style="width:100%;image-rendering:pixelated"></canvas><p id=ci style="margin:4px">黑板上冒出重點時，點它來抄筆記（空白鍵也行）。留意教授的動靜。</p><div><button data-m=0>1 聽課抄筆記</button><button data-m=1>2 偷滑手機</button><button data-m=2>3 趴下偷睡</button><button data-m=3>4 溜出教室</button></div></div>`;
 const cv2=$('#cg'),x=cv2.getContext('2d'),WD=['重點！','考試會考','∫ 2x dx','F = ma','期中範圍','Python','這很重要','記起來'],TOT=24*30;x.font='14px DotGothic16,sans-serif';
 let mode=0,fr=0,ps=0,pt=100,chips=[],notes=0,caught=0,phS=0,slS=0,dz=cl((70-S.e)*.4,0,35),forced=0,flash=0,sneak=0,nod=0;
 const say_=t=>$('#ci').textContent=t;
 const catchIt=()=>{caught++;mode=0;forced=0;flash=20;say_('被教授發現了！');sfx(150,.25,'sawtooth')};
 const fin=lv=>{clearInterval(iv);kd=null;ov.style.display='none';busy--;r({left:lv,notes,caught,phS,slS,tot:Math.max(1,fr)})};
-const setM=m=>{if(m==3){if(forced)return;sneak=45;mode=0;say_('你貓著腰往後門爬……教授一轉頭就完了（按 1 可中止）');return}if(forced&&m!=2)return;sneak=0;mode=m;if(nod>0){nod=0;dz=m==0?60:dz;if(m==0)say_('你用力眨眼，清醒了一點。')}if(ps==2&&(m==1||m==2))catchIt()};
+const setM=m=>{if(m==3){if(forced)return;fin(1);return}if(forced&&m!=2)return;sneak=0;mode=m;if(nod>0){nod=0;dz=m==0?60:dz;if(m==0)say_('你用力眨眼，清醒了一點。')}if(ps==2&&((m==1&&PF.phone)||(m==2&&PF.sleep)))catchIt()};
 const cap=q=>{if(mode==0&&q){q.got=1;notes++;sfx(880,.05)}};
 ov.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setM(+b.dataset.m));
 kd=e=>{if(e.key.length==1&&'1234'.includes(e.key))setM(+e.key-1);if(e.key==' ')cap(chips.find(q=>!q.got))};
 cv2.onpointerdown=e=>{const b=cv2.getBoundingClientRect(),px=(e.clientX-b.left)/b.width*480,py=(e.clientY-b.top)/b.height*270;cap(chips.find(q=>!q.got&&Math.abs(q.x-px)<48&&Math.abs(q.y-py)<18))};
 const iv=setInterval(()=>{fr++;pt--;
- if(pt<=0){if(ps==0){ps=1;pt=26;say_('……教授的腳步聲停下來了。')}else if(ps==1){ps=2;pt=50+R()*40|0;if(mode==1||mode==2)catchIt()}else{ps=0;pt=90+R()*80|0;say_('教授轉回黑板繼續寫。')}}
- if(fr%48==0)chips.push({x:120+R()*240,y:55+R()*70,t:100,w:pk(WD)});chips.forEach(q=>q.t--);chips=chips.filter(q=>q.t>0);
+ if(pt<=0){if(ps==0){ps=1;pt=26;say_('……教授的腳步聲停下來了。')}else if(ps==1){ps=2;pt=50+R()*40|0;if((mode==1&&PF.phone)||(mode==2&&PF.sleep))catchIt()}else{ps=0;pt=90+R()*80|0;say_('教授轉回黑板繼續寫。')}}
+ if(fr%48==0)chips.push({x:120+R()*240,y:55+R()*70,t:100,w:pk(KW[c.n]||WD)});chips.forEach(q=>q.t--);chips=chips.filter(q=>q.t>0);
  if(mode==2){dz=Math.max(0,dz-.5);slS++}else{dz+=(mode==0?.016:.008)*Math.exp(.005*fr);if(mode==1)phS++}
  if(dz>=100&&!forced&&!nod){nod=26;say_('你的眼皮越來越重……按 1 振作精神！')}if(nod>0&&--nod==0){forced=60;mode=2;dz=60;say_('你的頭沉了下去……')}
- if(forced){forced--;if(ps==2&&mode==2)catchIt()}
+ if(forced){forced--;if(ps==2&&mode==2&&PF.sleep)catchIt()}
  if(flash>0)flash--;
- if(sneak>0){if(ps!=0){catchIt();sneak=0}else if(--sneak==0)return fin(1)}
  x.textAlign='center';x.fillStyle='#d7ccc8';x.fillRect(0,0,480,270);x.fillStyle='#2e7d32';x.fillRect(70,24,340,112);x.fillStyle='#8d6e63';x.fillRect(0,170,480,100);x.fillStyle='#a1887f';x.fillRect(0,165,480,10);
  const px=ps==0?200+Math.sin(fr/25)*70:224;x.fillStyle='#5d4037';x.fillRect(px,84,32,40);x.fillStyle='#ffcc99';x.fillRect(px+4,62,24,22);
  if(ps){x.fillStyle='#000';x.fillRect(px+8,70,4,4);x.fillRect(px+20,70,4,4)}else{x.fillStyle='#3e2723';x.fillRect(px+4,62,24,22);x.fillStyle='#fff';x.fillRect(px-20,60+(fr%20),20,2)}
@@ -345,14 +384,14 @@ const iv=setInterval(()=>{fr++;pt--;
  if(flash>0){x.fillStyle=`rgba(255,0,0,${flash/40})`;x.fillRect(0,0,480,270)}
  x.fillStyle='#fff';x.textAlign='left';x.fillText(`筆記 ${notes}　被抓 ${caught}　睡意 ${dz|0}%　${sneak>0?'偷溜中':['聽課中','滑手機中','趴睡中'][mode]}`,8,262);x.fillStyle='#ff4fd8';x.fillRect(0,266,480*fr/TOT,4);
  if(fr>=TOT)fin(0)},33)})}
-async function klass(c){S.inC=1;c.done=1;const late=S.t-c.s;await fp('class',late>25?'你推開教室的門。全班的視線同時轉向你。':`〈${c.n}〉開始了。你在座位上坐下。`);if(late>25){ch('c',-2);ch('s',-2)}
+async function klass(c){const PF=profOf(c);S.inC=1;c.done=1;const late=S.t-c.s;await fp('class',late>25?'你推開教室的門。全班的視線同時轉向你。':`〈${c.n}〉開始了。你在座位上坐下。`);if(late>25){ch('c',-2);ch('s',-2)}
  c.att=0;let first=1;
  while(S.t<c.e&&S.map=='class'){const d=Math.min(50,c.e-S.t),rs=await classGame(c,d),sc=d/50;
-  if(rs.left){ch('a',-8);ch('c',-3);await say('','你貓著腰從後門溜了出去。');S.map='campus';S.x=7*16;S.y=6*16;adv(2);break}
+  if(rs.left){if(await sneakG(PF.eye)){ch('a',-8);ch('c',-3);await say('','你貓著腰從後門溜了出去。');S.map='campus';S.x=7*16;S.y=6*16;adv(2);break}c.sat=1;await say('教授','「這位同學，要去哪裡？……來，幫我把黑板擦乾淨。」');await wipeBoard();adv(8);ch('c',-4);ch('s',-3);await say('教授','「謝謝你。下次想溜出去，記得挑我沒在看的時候。」');continue}
   c.sat=1;if(rs.notes>=4)c.att++;if(rs.phS>20)S.ph++;
   ch('a',rs.notes*.6*sc);ch('e',-5*sc);ch('s',Math.min(10,rs.phS/30*.7)-2*sc);ch('e',Math.min(16,rs.slS/30));S.nap+=d*rs.slS/rs.tot;ch('c',-6*rs.caught);ch('a',-2*rs.caught);ch('s',-3*rs.caught);
   if(rs.caught)await say('教授',pk(['「同學，我講的有比手機好看嗎？」','「後排那位同學，請你回答這題。」（你不會）','「睡得還好嗎？」']));else if(rs.notes>=8)toast('筆記抄得滿滿的。');
-  if(first&&R()<.4){first=0;await roll()}else if(!first&&!c.q&&R()<.45){c.q=1;const n=await quiz(c.att);ch('a',[-4,0,4,8][n]);await say('教授',n==3?'「全對？……你不像是會來上課的人。」':n==0?'「這次的小考……我不想講。」':`「小考結束。你答對了 ${n} 題。」`)}
+  if(first&&PF.roll){first=0;await roll()}else if(!first&&!c.q&&R()<.45){c.q=1;const n=await quiz(c.att,c.n);ch('a',[-4,0,4,8][n]);await say('教授',n==3?'「全對？……你不像是會來上課的人。」':n==0?'「這次的小考……我不想講。」':`「小考結束。你答對了 ${n} 題。」`)}
   else if(R()<.2){if(await ask('教授：「那邊那位同學，你來說說看。」',['舉手回答','假裝在寫筆記'],'教授')==0){if(R()<.5){ch('a',3);ch('c',2);await say('教授','「……還可以。」')}else{ch('s',-4);await say('教授','「嗯，有想法是好事，但不是這個。」')}}else ch('s',-1)}
   first=0;adv(d);if(S.t<c.e){adv(10);toast('下課十分鐘……上課鐘響了。')}}
  S.inC=0;if(S.map=='class'&&S.t>=c.e)await say('','下課了。教室瞬間活了過來。')}
@@ -367,12 +406,16 @@ async function roll(){await say('教授','「來，點名。我念到名字的�
 /* ---------- 結局 ---------- */
 const E={expel:['被二一退學','學務處的信比鬧鐘還準時。你說：「可是我才玩了一天欸？」'],faint:['過勞昏倒','你倒下的那一刻，腦中浮現的是：「我的作業還沒交。」'],mad:['精神崩潰・出家','你看破紅塵，剃度出家。法號：已讀不回。'],soc:['社交達人','全校都認識你，連學校的貓都叫你學長。'],geek:['卷王附體','你已經不是人了，你是一台行走的筆記本。'],zen:['大徹大悟','San 值爆表。你看透了學分、考試與人生，微笑著走進夕陽。'],oh:['歐皇降臨','麻將桌上的神降臨在你身上。老闆娘偷偷把你的照片貼在牆上。'],sleep:['睡覺大師','你整天幾乎都在睡，而且睡得理直氣壯。'],lie:['躺平大師','一堂課都沒去，卻活得很安詳。教授：「你是哪位？」'],night:['熬夜修仙成功','天亮了，你還沒睡。修仙成功，只是明天的你要付帳。'],star:['模範大學生','全勤、認真、不翹課。你是教授心中的理想型，也是同學心中的捲王候補。'],gamer:['電競魂','你沒有上場比賽，但你的魂已經在戰場上了。'],phone:['低頭族代表','你的拇指今天跑了半個馬拉松。'],broke:['月底吃土','錢包空空如也，你開始研究免費試吃的時間表。'],pop:['人氣王','今天到處都有人跟你打招呼，你的手機通知多到變成一種噪音。'],norm:['平凡順利的一天','沒有大風大浪。就是平凡地、有點累地，過完了這一天。'],
 wtox:['水中毒','你喝水喝到停不下來，身體裡的鈉被稀釋得一乾二淨。護理師說：「喝水是好事，但不是這樣喝。」'],dehyd:['脫水送醫','你一整天只顧著做事，忘了喝水。救護車上，護理師說：「同學，水很便宜。」'],starve:['營養不良昏倒','你整天沒好好吃東西，終於在路邊坐了下來。路人問你：「需要幫忙嗎？」你說：「我想吃雞腿。」'],crash:['車禍進急診','你今天撞了太多次。腳踏車說：「我不幹了。」你在急診室被問：「你是怎麼騎的？」'],doze:['睡死在原地','過了午夜，你的身體先替你做了決定。你倒在原地呼呼大睡，明天的你會處理。'],dang:['被當邊緣','缺課太多，教授的點名簿上寫滿了你的名字。你說：「我只是……沒有去。」'],muscle:['健身魂','你今天把一半的人生花在健身房，剩下的一半拿來喘氣。肌肉在對你點頭。'],lib:['圖書館幽靈','你整天待在圖書館。管理員說：「你是我們這裡新來的書。」'],snackk:['宵夜成癮者','你今天的第三餐是宵夜，第四餐也是。胃：「我們談談。」'],brain:['腦袋被 AI 洗乾淨','你看了太多 AI 生成的影片，現在腦中只剩下「鯊魚穿球鞋」。'],quest:['跑腿王','全勤之外，你還接了一堆 NPC 的任務。你是這所學校的萬事通。']};
-function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(S.s>=95&&S.a>=40)return'zen';if(!a)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(a==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
+function dayEnd(){const n=S.tt.length,a=S.tt.filter(c=>c.sat).length,rl=S.tt.filter(c=>c.sat&&!c.free).length;if(S.mj>=400)return'oh';if(S.t>=25*60)return'night';if(S.s>=95&&S.a>=40)return'zen';if(S.a>=95)return'geek';if(S.c>=95)return'soc';if(!rl)return S.nap>=180?'sleep':'lie';if(S.miss>=2)return'dang';if(rl==n&&S.a>=60&&S.s>=40)return S.qn>=2?'quest':'star';if(S.gym>=3)return'muscle';if(S.lib>=2)return'lib';if(S.ai>=2)return'brain';if(S.snk>=2)return'snackk';if(S.gm>=2)return'gamer';if(S.ph>=5)return'phone';if(S.m<80)return'broke';if(S.qn>=2)return'quest';if(S.c>=70)return'pop';return'norm'}
 const DEATHS=['expel','faint','mad','dehyd','starve','crash','wtox'];
 function deathFx(k){S.over=1;let f=0;sfx(200,.4,'sawtooth',.06);const iv=setInterval(()=>{f++;S.fall=f;draw();g.setTransform(3,0,0,3,0,0);g.fillStyle=`rgba(180,0,0,${Math.min(.55,f/60)})`;g.fillRect(0,0,480,320);const rad=Math.max(0,260-f*3.4),gr=g.createRadialGradient(S.x+5,S.y,rad*.2,S.x+5,S.y,rad+30);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,1)');g.fillStyle=gr;g.fillRect(0,0,480,320);if(f>15)txt('💀 你倒下了……',240,150,18,'#fff');if(f%12==0)sfx(180,.3,'sawtooth',.05);if(f>=80){clearInterval(iv);S.fall=0;S.dd=1;end(k)}},33)}
-function end(k){if(DEATHS.includes(k)&&!S.dd){deathFx(k);return}S.over=1;busy=0;const e=E[k],gr=S.a>=80?'A':S.a>=65?'B':S.a>=50?'C':S.a>=30?'D':'F';ov.style.display='flex';dlg.style.display='none';
- ov.innerHTML=`<div class=box><h3>📜 今日成績單</h3><h2>${e[0]}</h2><p>${e[1]}</p><table><tr><td>學業評等</td><td>${gr}</td><td>出席</td><td>${S.tt.filter(c=>c.sat).length}/${S.tt.length}</td></tr><tr><td>社交</td><td>${S.c|0}</td><td>SAN 值</td><td>${S.s|0}</td></tr><tr><td>小睡</td><td>${(S.nap/60).toFixed(1)}h</td><td>麻將</td><td>${S.mj>=0?'+':''}${S.mj}</td></tr><tr><td>存款</td><td>$${S.m}</td><td>滑手機</td><td>${S.ph} 次</td></tr><tr><td>完成任務</td><td>${S.qn}</td><td>運動／讀書</td><td>${S.gym}／${S.lib}</td></tr></table><p>截圖分享你的結局吧！</p><button onclick="location.reload()">再活一天</button></div>`;jg([523,659,784,1047])}
-function chkEnd(){if(S.s<=20&&!S.sw){S.sw=1;toast('你快撐不住了……找個地方放鬆一下吧。')}if(S.s>35)S.sw=0;if(S.ow>=30&&!S.ow1){S.ow1=1;ch('e',-8);ch('s',-8);toast('你覺得頭暈、反胃……水好像喝太多了。')}if(S.ow<10)S.ow1=0;if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.c>=100)end('soc');else if(S.a>=100)end('geek');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve');else if(S.ow>=70)end('wtox')}
+const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}};
+function save(){if(!S.go||S.over)return;try{localStorage.setItem('cday_save',JSON.stringify(S,(k,v)=>k=='q'&&v&&typeof v=='object'&&v.from?{from:v.from,have:v.have,_q:1}:v))}catch(e){}}
+function pauseG(){if(busy)return;busy++;ov.style.display='flex';ov.innerHTML='<div class=box><h2>⏸ 暫停</h2><p>時間已停止，進度會自動存檔。</p><button id=pr>繼續</button><button id=ps2>存檔並回標題</button></div>';$('#pr').onclick=()=>{ov.style.display='none';busy--};$('#ps2').onclick=()=>{save();location.reload()}}
+function showGal(){const u=LS('cday_end')||{},ks=Object.keys(E);ov.style.display='flex';ov.innerHTML=`<div class=box><h2>🏆 結局圖鑑 ${ks.filter(k=>u[k]).length}/${ks.length}</h2><div style="text-align:left;columns:2">${ks.map(k=>u[k]?`<p>✔ ${E[k][0]}（${u[k]}）</p>`:'<p>？？？</p>').join('')}</div><button id=gb>返回</button></div>`;$('#gb').onclick=()=>location.reload()}
+function end(k){if(DEATHS.includes(k)&&!S.dd){deathFx(k);return}S.over=1;{const u=LS('cday_end')||{};S._new=!u[k];u[k]=(u[k]||0)+1;LS('cday_end',u);LS('cday_save',null)}busy=0;const e=E[k],gr=S.a>=80?'A':S.a>=65?'B':S.a>=50?'C':S.a>=30?'D':'F';ov.style.display='flex';dlg.style.display='none';
+ ov.innerHTML=`<div class=box><h3>📜 今日成績單</h3><h2>${e[0]}</h2><p>${e[1]}</p><table><tr><td>學業評等</td><td>${gr}</td><td>出席</td><td>${S.tt.filter(c=>c.sat).length}/${S.tt.length}</td></tr><tr><td>社交</td><td>${S.c|0}</td><td>SAN 值</td><td>${S.s|0}</td></tr><tr><td>小睡</td><td>${(S.nap/60).toFixed(1)}h</td><td>麻將</td><td>${S.mj>=0?'+':''}${S.mj}</td></tr><tr><td>存款</td><td>$${S.m}</td><td>滑手機</td><td>${S.ph} 次</td></tr><tr><td>完成任務</td><td>${S.qn}</td><td>運動／讀書</td><td>${S.gym}／${S.lib}</td></tr></table><p>${S._new?'🆕 新結局解鎖！　':''}圖鑑 ${Object.keys(LS('cday_end')||{}).length}/${Object.keys(E).length}　截圖分享你的結局吧！</p><button onclick="location.reload()">再活一天</button></div>`;jg([523,659,784,1047])}
+function chkEnd(){if(S.e<=15&&!S.ew){S.ew=1;toast('你累到快站不住了，找個地方休息吧。')}if(S.e>40)S.ew=0;if(S.s<=20&&!S.sw){S.sw=1;toast('你快撐不住了……找個地方放鬆一下吧。')}if(S.s>35)S.sw=0;if(S.ow>=30&&!S.ow1){S.ow1=1;ch('e',-8);ch('s',-8);toast('你覺得頭暈、反胃……水好像喝太多了。')}if(S.ow<10)S.ow1=0;if(S.a<=0)end('expel');else if(S.e<=0)end('faint');else if(S.s<=0)end('mad');else if(S.crash>=4)end('crash');else if(S.wz>=3)end('dehyd');else if(S.fz>=5)end('starve');else if(S.ow>=70)end('wtox')}
 /* ---------- 繪製 ---------- */
 const txt=(s,x,y,z,c)=>{g.font=`${z}px DotGothic16,'Noto Sans TC',sans-serif`;g.textAlign='center';g.lineWidth=2.5;g.strokeStyle='#000';g.strokeText(s,x,y);g.fillStyle=c;g.fillText(s,x,y)};
 function man(x,y,c,fr){const b=Math.sin(fr)>0?1:0;g.fillStyle='rgba(0,0,0,.3)';g.fillRect(x+1,y+14,10,3);g.fillStyle='#37474f';g.fillRect(x+2,y+11+b,3,4-b);g.fillRect(x+7,y+12-b,3,3+b);g.fillStyle=c;g.fillRect(x+1,y+5,10,7);g.fillStyle='#ffcc99';g.fillRect(x+2,y,8,6);g.fillStyle='#3e2723';g.fillRect(x+2,y,8,2);g.fillStyle='#000';g.fillRect(x+4,y+3,1,1);g.fillRect(x+7,y+3,1,1)}
@@ -516,28 +559,34 @@ function hud(){if(hc++%6)return;const c=cur(),nx=S.tt.find(c=>c.s>S.t),a=S.tt.fi
 /* ---------- 主迴圈 ---------- */
 const CB=o=>o.n=='籃球場'?{x:-99,y:-99,w:0,h:0}:o.k=='t'?{x:o.x+11,y:o.y+23,w:10,h:8}:o.n=='路燈'?{x:o.x+4,y:o.y+26,w:8,h:6}:o;
 const hit=(x,y,o)=>x<o.x+o.w&&x+10>o.x&&y<o.y+o.h&&y+8>o.y;
+function unstick(){const fr=(x,y)=>!(x<2||x>468||y<26||y>310||OS().some(o=>'dipet'.includes(o.k)&&hit(x,y,CB(o))));for(let r=6;r<=64;r+=6)for(const d of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,-1],[1,-1],[-1,1]]){const x=S.x+d[0]*r,y=S.y+d[1]*r;if(fr(x,y)){S.x=x;S.y=y;toast('你從縫隙裡擠了出來。');return}}}
 function mv(a,b){const nx=S.x+a,ny=S.y+b;if(nx<2||nx>468||ny<26||ny>310)return;if(OS().some(o=>'dipet'.includes(o.k)&&hit(nx,ny,CB(o))))return;S.x=nx;S.y=ny}
 function go(a){S.map=a[0];S.x=a[1]*16;S.y=a[2]*16;adv(3);sfx(440,.1);cv.style.opacity=.2;setTimeout(()=>cv.style.opacity=1,120)}
 async function use(o){if(o.k=='e'){if(o.a[3]&&!opn(o.a[3]))return toast(o.n+'：現在不開放。');go(o.a)}else if(o.k=='p')await talk(o.a);else await A[o.a]()}
 async function restart(){if(busy)return;if(await ask('要重新開局嗎？今天的進度會消失。',['重新開始','繼續玩'])==0)location.reload()}
 function tick(dt){adv(dt/3);const k=c=>keys[c],dx=(k('ArrowRight')||k('KeyD')||T.r?1:0)-(k('ArrowLeft')||k('KeyA')||T.l?1:0),dy=(k('ArrowDown')||k('KeyS')||T.d?1:0)-(k('ArrowUp')||k('KeyW')||T.u?1:0);
- if(dx||dy){const run=(k('ShiftLeft')||k('ShiftRight')||T.run)&&S.e>5,l=Math.hypot(dx,dy),sp=(run?135:75)*dt;if(run)ch('e',-dt*.6);mv(dx/l*sp,0);mv(0,dy/l*sp);S.fr+=dt*(run?20:14)}
+ if(dx||dy){const run=(k('ShiftLeft')||k('ShiftRight')||T.run)&&S.e>5,l=Math.hypot(dx,dy),sp=(run?135:75)*dt;if(run)ch('e',-dt*.6);const ox=S.x,oy=S.y;mv(dx/l*sp,0);mv(0,dy/l*sp);S.fr+=dt*(run?20:14);if(S.x==ox&&S.y==oy){S.stk=(S.stk||0)+dt;if(S.stk>2){S.stk=0;unstick()}}else S.stk=0}else S.stk=0
  wander(dt);chkEnd();if(S.over)return;
- for(const c of S.tt){if(!c.sat&&!c.pen&&S.t>=c.e){c.pen=1;ch('a',-9);S.miss++}if(!c.w10&&S.t>=c.s-10&&S.t<c.s){c.w10=1;toast(`⏰ 快上課了：〈${c.n}〉${c.r}`)}}
+ for(const c of S.tt){if(!c.sat&&!c.pen&&S.t>=c.e){c.pen=1;if(profOf(c).roll){ch('a',-9);S.miss++}else{c.sat=1;c.free=1;ch('a',-4)}}if(!c.w10&&S.t>=c.s-10&&S.t<c.s){c.w10=1;if(S.map!='class')banner('快上課了',`〈${c.n}〉　${c.r}`)}if(!c.w0&&S.t>=c.s&&S.t<c.e){c.w0=1;if(S.map!='class')banner('上課了！',`〈${c.n}〉在 ${c.r}　你還沒到教室`)}}
  if(S.ur&&S.t>S.ur){S.ur=0;ch('s',-25);ch('c',-15);ev.push(()=>say('','……來不及了。你的人生出現了一道不能言說的裂痕。'))}
  if(S.map=='class'){const c=cur();if(c&&!c.done){klass(c);return}}
  {const hz=HRS[S.map];S.kd=S.kd||{};if(hz&&!opn(hz)&&!S.kd[S.map]){S.kd[S.map]=1;closeUp(S.map);return}}
  if(S.map=='class'&&!cur()){const h=hh();if(h>=18.5&&!S.lk){S.lk=1;lockClass();return}if(h>=17.75&&h<18.5&&!S.eg){S.eg=1;eggClass();return}}
  if(ev.length){ev.shift()();return}
  if(S.t>=24*60&&S.e<20)return end('doze');if(S.t>=26*60)end('night')}
-let last=0;function loop(t){const dt=Math.min(.05,(t-last)/1000);last=t;if(S&&!S.over){if(S.go&&!busy)tick(dt);draw();hud()}requestAnimationFrame(loop)}
+const IVS=new Set(),_si=window.setInterval.bind(window);window.setInterval=(f,t)=>{const i=_si(f,t);IVS.add(i);return i};let lastErr=0;
+function recover(e){console.error(e);IVS.forEach(i=>clearInterval(i));IVS.clear();busy=0;cb=null;kd=null;dlg.style.display='none';if(!S||!S.over)ov.style.display='none';if(Date.now()-lastErr>3000)toast('剛剛出了點小狀況，已幫你恢復。');lastErr=Date.now()}
+addEventListener('error',e=>recover(e.error||e.message));addEventListener('unhandledrejection',e=>recover(e.reason));
+let last=0;function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1000);last=t;try{if(S&&!S.over){if(S.go&&!busy)tick(dt);draw();hud()}}catch(e){recover(e)}}
 /* ---------- 輸入 ---------- */
 onkeydown=e=>{keys[e.code]=1;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
  if(cb){if(!cb.ch&&(e.key==' '||e.key=='Enter'||e.key=='e'))dlg.click();else if(cb.ch&&/[1-9]/.test(e.key)){const b=dlg.querySelector(`[data-i="${e.key-1}"]`);b&&b.click()}return}
  if(kd)return kd(e);if(!S.go||busy)return;if('eE '.includes(e.key)){const o=near();o&&use(o)}if('tT'.includes(e.key))showTT();if('rR'.includes(e.key))restart()};
 onkeyup=e=>delete keys[e.code];
-$('#pd').innerHTML=[['u','▲','1/2'],['l','◀','2/1'],['r','▶','2/3'],['d','▼','3/2']].map(x=>`<button data-k=${x[0]} style="grid-area:${x[2]}">${x[1]}</button>`).join('');
-document.querySelectorAll('#pd button').forEach(b=>{b.onpointerdown=()=>T[b.dataset.k]=1;b.onpointerup=b.onpointerleave=()=>T[b.dataset.k]=0});
+(()=>{const j=$('#joy'),k=$('#jk'),D8=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];let id=null;const off=()=>{T.l=T.r=T.u=T.d=0};
+const set=(x,y)=>{const b=j.getBoundingClientRect(),dx=x-(b.left+b.width/2),dy=y-(b.top+b.height/2),d=Math.hypot(dx,dy),m=Math.min(d,43),a=Math.atan2(dy,dx);k.style.transform=d?`translate(${Math.cos(a)*m}px,${Math.sin(a)*m}px)`:'';if(d<14){off();return}const v=D8[(Math.round(a/(Math.PI/4))+8)%8];T.r=v[0]>0;T.l=v[0]<0;T.d=v[1]>0;T.u=v[1]<0};
+const end=()=>{id=null;k.style.transform='';off()};
+j.onpointerdown=e=>{id=e.pointerId;try{j.setPointerCapture(id)}catch(z){}set(e.clientX,e.clientY);e.preventDefault()};j.onpointermove=e=>{if(e.pointerId==id)set(e.clientX,e.clientY)};j.onpointerup=j.onpointercancel=end})();
 $('#ab').onclick=()=>{if(S.go&&!busy){const o=near();o&&use(o)}};
 $('#rn').onpointerdown=()=>T.run=1;$('#rn').onpointerup=$('#rn').onpointerleave=$('#rn').onpointercancel=()=>T.run=0;document.addEventListener('contextmenu',e=>e.preventDefault());
 $('#bt').onclick=()=>S.go&&showTT();$('#bp').onclick=()=>S.go&&phone();$('#br').onclick=()=>S.go&&restart();
@@ -547,5 +596,8 @@ async function begin(){S.tt=mkTT();const k=await ask('【前一晚】明天好�
  else{await say('','你決定相信明天的自己。晚安。');w=390+R()*330|0}
  S.t=w;await say('',`……你睜開眼睛。手機螢幕顯示 ${clk()}。`);S.go=1;toast('方向鍵/WASD 移動 · Shift 奔跑 · E 互動 · T 課表 · R 重開')}
 S=init();requestAnimationFrame(loop);
+if(LS('cday_save'))$('#cont').style.display='';$('#gal').onclick=showGal;$('#bz').onclick=()=>S.go&&pauseG();
+$('#cont').onclick=()=>{const d=LS('cday_save');if(!d)return;S=Object.assign(init(),d);if(S.q&&S.q._q)S.q={...Q[S.q.from],from:S.q.from,have:S.q.have};S.inC=0;S.over=0;S.go=1;busy=0;ev=[];ov.style.display='none';toast('已讀取存檔')};
+document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 $('#sb').onclick=()=>{ov.style.display='none';sfx(660,.1);begin()};
 </script></body></html>
